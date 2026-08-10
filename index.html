@@ -172,6 +172,7 @@
   .newprof{display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:10px}
   .pinbox{border:1px solid var(--pv-line); border-left:4px solid var(--pv-navy); background:#f8fafc; border-radius:3px; padding:14px 16px; margin:4px 0 14px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; font-size:14px}
   .formerr{color:var(--bad); font-size:13px; margin-top:8px; min-height:1.2em}
+  .switchline{font-size:13.5px; color:var(--ink-soft); margin-top:14px}
 
   .specs{display:grid; grid-template-columns:repeat(2,1fr); gap:1px; background:var(--pv-line); border:1px solid var(--pv-line); border-radius:4px; overflow:hidden; margin:0 0 24px}
   .spec{background:#fff; padding:13px 16px}
@@ -247,23 +248,32 @@
 <div class="screen" id="loginScreen">
   <div class="card">
     <div class="brandline">Test of Mathematics for University Admission</div>
-    <h1>Who's practising?</h1>
-    <p class="lead">Profiles keep progress, per-question history and resumable sessions separate for each person on this device. An optional PIN stops others opening your profile here — it's device-local privacy, not real account security.</p>
-    <div id="profileList"></div>
-    <div class="pinbox hidden" id="pinBox">
-      <span id="pinPrompt">Enter PIN</span>
-      <input class="txt" id="pinInput" type="password" inputmode="numeric" maxlength="12" style="width:110px" placeholder="PIN">
-      <button class="bigbtn" id="pinGo">Sign in</button>
-      <button class="bigbtn ghost" id="pinCancel">Cancel</button>
+    <h1 id="authTitle">Sign in</h1>
+    <p class="lead">Profiles are private to this device and are not listed here. Sign in with your profile name and PIN, or register a new profile. Progress, per-question history and resumable sessions are kept separately for each profile.</p>
+
+    <div id="signinView">
+      <div class="newprof">
+        <input class="txt" id="siName" maxlength="24" placeholder="Profile name" autocomplete="off">
+        <input class="txt" id="siPin" type="password" maxlength="12" style="width:170px" placeholder="PIN (blank if none)">
+        <button class="bigbtn" id="siBtn">Sign in</button>
+      </div>
+      <p class="switchline">New here? <button class="linkbtn" id="toRegister">Register a profile</button></p>
     </div>
-    <div class="group-label">New profile</div>
-    <div class="newprof">
-      <input class="txt" id="newName" maxlength="24" placeholder="Name">
-      <input class="txt" id="newPin" type="password" inputmode="numeric" maxlength="12" style="width:150px" placeholder="PIN (optional)">
-      <button class="bigbtn" id="createBtn">Create &amp; sign in</button>
+
+    <div id="registerView" class="hidden">
+      <div class="newprof">
+        <input class="txt" id="rgName" maxlength="24" placeholder="Choose a profile name" autocomplete="off">
+      </div>
+      <div class="newprof">
+        <input class="txt" id="rgPin" type="password" maxlength="12" style="width:170px" placeholder="Choose a PIN (optional)">
+        <input class="txt" id="rgPin2" type="password" maxlength="12" style="width:170px" placeholder="Repeat PIN">
+        <button class="bigbtn" id="rgBtn">Create &amp; sign in</button>
+      </div>
+      <p class="switchline">Already registered on this device? <button class="linkbtn" id="toSignin">Sign in</button></p>
     </div>
+
     <div class="formerr" id="loginErr"></div>
-    <p class="libnote">All data stays in this browser's storage on this device. Anyone with access to the device and its developer tools could read it — don't reuse a PIN that matters.</p>
+    <p class="libnote">Profiles and results are stored only in this browser on this device — using the site on another device starts fresh (leaderboard entries, once submitted, are shared everywhere). A forgotten PIN cannot be recovered; you would need to register a new profile. If a paper is sat, the profile name appears on the public leaderboard.</p>
   </div>
 </div>
 
@@ -272,7 +282,7 @@
   <div class="card">
     <div class="brandline">Test of Mathematics for University Admission</div>
     <h1>Test Simulator</h1>
-    <div class="profline">Signed in as <b id="profName"></b> · <button class="linkbtn" id="signOutBtn">Switch user</button></div>
+    <div class="profline">Signed in as <b id="profName"></b> · <button class="linkbtn" id="signOutBtn">Switch user</button> · <button class="linkbtn" id="deleteProfileBtn" style="color:var(--bad)">Delete this profile</button></div>
     <p class="lead">Timed practice papers presented in a Pearson VUE-style computer-based testing interface: status bar with the time remaining, flag for review, a Review Screen listing every question, and automatic submission when time expires. Worked solutions appear after each paper. Every answer key is computationally verified.</p>
 
     <div class="libhead">
@@ -912,68 +922,58 @@ async function hashPin(pin){
 }
 
 /* ---------------- login ---------------- */
-let pinTarget=null;
-function buildLogin(){
-  const list=$('profileList'); list.innerHTML='';
-  $('pinBox').classList.add('hidden'); $('loginErr').textContent=''; pinTarget=null;
-  const ids=Object.keys(ROOT.profiles).sort((a,b)=>(b===ROOT.lastUser)-(a===ROOT.lastUser));
-  ids.forEach(id=>{
-    const p=ROOT.profiles[id];
-    const d=ROOT.data[id]||{results:{}};
-    const attempts=Object.values(d.results||{}).reduce((n,arr)=>n+arr.length,0);
-    const row=document.createElement('button');
-    row.className='profrow'; row.setAttribute('type','button');
-    row.innerHTML='<span class="pname">'+escapeHtml(p.name)+'</span>'
-      +(p.pin?'<span class="lock">&#128274; PIN</span>':'')
-      +'<span class="pstats">'+attempts+' attempt'+(attempts===1?'':'s')+' recorded</span>'
-      +'<span class="del" data-del="'+id+'">Delete</span>';
-    row.addEventListener('click',(e)=>{
-      if(e.target && e.target.getAttribute && e.target.getAttribute('data-del')){ deleteProfile(id, p.name); return; }
-      if(p.pin){ askPin(id, p.name); } else { signIn(id); }
-    });
-    list.appendChild(row);
-  });
-  if(!ids.length){
-    const msg=document.createElement('p');
-    msg.style.cssText='font-size:14px;color:var(--ink-soft)';
-    msg.textContent='No profiles yet — create one below to begin.';
-    list.appendChild(msg);
-  }
+function escapeHtml(str){ return String(str).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function showLogin(){
+  ['siName','siPin','rgName','rgPin','rgPin2'].forEach(id=>{ $(id).value=''; });
+  $('loginErr').textContent='';
+  $('registerView').classList.add('hidden');
+  $('signinView').classList.remove('hidden');
+  $('authTitle').textContent='Sign in';
 }
-function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-function askPin(id,name){
-  pinTarget=id;
-  $('pinPrompt').textContent='Enter PIN for '+name+':';
-  $('pinInput').value='';
-  $('pinBox').classList.remove('hidden');
-  $('pinInput').focus();
-}
-$('pinCancel').addEventListener('click', ()=>{ pinTarget=null; $('pinBox').classList.add('hidden'); });
-$('pinGo').addEventListener('click', tryPin);
-$('pinInput').addEventListener('keydown', e=>{ if(e.key==='Enter') tryPin(); });
-async function tryPin(){
-  if(!pinTarget) return;
-  const h=await hashPin($('pinInput').value);
-  if(h===ROOT.profiles[pinTarget].pin){ signIn(pinTarget); }
-  else { $('loginErr').textContent='Incorrect PIN.'; $('pinInput').value=''; $('pinInput').focus(); }
-}
-$('createBtn').addEventListener('click', async ()=>{
-  const name=$('newName').value.trim();
-  if(!name){ $('loginErr').textContent='Enter a name for the profile.'; return; }
-  if(Object.values(ROOT.profiles).some(p=>p.name.toLowerCase()===name.toLowerCase())){ $('loginErr').textContent='A profile with that name already exists.'; return; }
-  const pinRaw=$('newPin').value;
-  const id='u'+Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36);
-  ROOT.profiles[id]={ name, pin: pinRaw? await hashPin(pinRaw) : null, created:Date.now() };
-  ROOT.data[id]={ results:{}, inprogress:{} };
-  $('newName').value=''; $('newPin').value='';
-  persist(); signIn(id);
+function authErr(m){ $('loginErr').textContent=m; }
+$('toRegister').addEventListener('click', ()=>{
+  $('signinView').classList.add('hidden'); $('registerView').classList.remove('hidden');
+  $('authTitle').textContent='Register'; authErr(''); $('rgName').focus();
 });
-function deleteProfile(id,name){
-  if(!confirm('Delete profile "'+name+'" and all of its saved attempts? This cannot be undone.')) return;
-  delete ROOT.profiles[id]; delete ROOT.data[id];
-  if(ROOT.lastUser===id) ROOT.lastUser=null;
-  persistNow(); buildLogin();
+$('toSignin').addEventListener('click', ()=>{ showLogin(); $('siName').focus(); });
+
+function findProfileByName(name){
+  const lc=String(name).trim().toLowerCase();
+  for(const id in ROOT.profiles){ if((ROOT.profiles[id].name||'').toLowerCase()===lc) return id; }
+  return null;
 }
+async function doSignIn(){
+  const name=$('siName').value.trim();
+  if(!name){ authErr('Enter your profile name.'); return; }
+  const bad='No matching profile on this device \u2014 check the name and PIN, or register a new profile.';
+  const id=findProfileByName(name);
+  if(!id){ authErr(bad); return; }
+  const p=ROOT.profiles[id];
+  if(p.pin){
+    const pinRaw=$('siPin').value;
+    if(!pinRaw || (await hashPin(pinRaw))!==p.pin){ authErr(bad); return; }
+  }
+  signIn(id);
+}
+$('siBtn').addEventListener('click', doSignIn);
+$('siName').addEventListener('keydown', e=>{ if(e.key==='Enter') doSignIn(); });
+$('siPin').addEventListener('keydown', e=>{ if(e.key==='Enter') doSignIn(); });
+
+async function doRegister(){
+  const name=$('rgName').value.trim();
+  if(!name){ authErr('Choose a name for the profile.'); return; }
+  if(findProfileByName(name)){ authErr('That name is already registered on this device \u2014 sign in instead.'); return; }
+  const pin=$('rgPin').value, pin2=$('rgPin2').value;
+  if(pin!==pin2){ authErr('The PINs don\u2019t match.'); return; }
+  const id='u'+Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36);
+  ROOT.profiles[id]={ name, pin: pin ? await hashPin(pin) : null, created:Date.now() };
+  ROOT.data[id]={ results:{}, inprogress:{} };
+  persist(); signIn(id);
+}
+$('rgBtn').addEventListener('click', doRegister);
+$('rgName').addEventListener('keydown', e=>{ if(e.key==='Enter') doRegister(); });
+$('rgPin2').addEventListener('keydown', e=>{ if(e.key==='Enter') doRegister(); });
+
 function signIn(id){
   currentUser=id; ROOT.lastUser=id;
   if(!ROOT.data[id]) ROOT.data[id]={results:{},inprogress:{}};
@@ -990,7 +990,18 @@ function signIn(id){
 $('signOutBtn').addEventListener('click', ()=>{
   persistNow(); currentUser=null; STATE={results:{},inprogress:{}};
   $('libraryScreen').classList.add('hidden');
-  buildLogin(); $('loginScreen').classList.remove('hidden');
+  showLogin(); $('loginScreen').classList.remove('hidden');
+});
+$('deleteProfileBtn').addEventListener('click', ()=>{
+  if(!currentUser || !ROOT.profiles[currentUser]) return;
+  const name=ROOT.profiles[currentUser].name;
+  if(!confirm('Delete profile \u201c'+name+'\u201d and all of its saved attempts on this device? Leaderboard entries already submitted are not removed. This cannot be undone.')) return;
+  delete ROOT.profiles[currentUser]; delete ROOT.data[currentUser];
+  if(ROOT.lastUser===currentUser) ROOT.lastUser=null;
+  currentUser=null; STATE={results:{},inprogress:{}};
+  persistNow();
+  $('libraryScreen').classList.add('hidden');
+  showLogin(); $('loginScreen').classList.remove('hidden');
 });
 
 /* ---------------- library ---------------- */
@@ -1456,7 +1467,7 @@ document.addEventListener('keydown', (e)=>{
       }
     }
   }catch(e){}
-  buildLogin();
+  showLogin();
 })();
 </script>
 </body>
