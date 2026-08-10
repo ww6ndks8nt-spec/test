@@ -84,6 +84,14 @@
   .opt.wrong .radio{border-color:var(--bad)}
   .opt.wrong .radio::after{content:""; position:absolute; inset:3px; background:var(--bad); border-radius:50%}
   .opt .mark{margin-left:auto; font-size:12px; font-weight:bold; align-self:center}
+  .options.companion{flex-direction:row; flex-wrap:wrap; gap:12px; margin-top:14px}
+  .copt{width:54px; height:54px; border:2px solid #6b7886; border-radius:50%; background:#fff; font-weight:bold; font-size:19px; color:var(--ink-soft)}
+  .copt:hover{background:#f0f5fa}
+  .copt.sel{background:var(--pv-navy); border-color:var(--pv-navy); color:#fff}
+  .copt.correct{background:var(--good); border-color:var(--good); color:#fff}
+  .copt.wrong{background:var(--bad); border-color:var(--bad); color:#fff}
+  .paper.locked{opacity:.55; cursor:default; border-left-color:#9aa6b1}
+  .paper.locked:hover{box-shadow:none}
   .opt.correct .mark{color:var(--good)} .opt.wrong .mark{color:var(--bad)}
 
   .solution{margin-top:22px; border:1px solid var(--pv-line); border-left:4px solid var(--pv-navy); background:#f8fafc; border-radius:3px; padding:14px 18px; font-size:15px; color:#2c3a49}
@@ -306,6 +314,9 @@
     <div class="group-label">Full-length mocks (community-contributed)</div>
     <div class="paper-grid" id="grid3"></div>
 
+    <div class="group-label">Official past papers 2016–2023 (companion mode — paper opens separately)</div>
+    <div class="paper-grid" id="grid4"></div>
+
     <p class="libnote">Progress is saved automatically per profile in this browser: leave mid-paper (or use Save &amp; exit) and resume later with the timer intact; every completed attempt keeps its full answer sheet, feeding the per-question history on each paper's start screen. Clearing site data erases everything. Independent practice tool — not affiliated with or endorsed by UAT-UK, Pearson VUE, or the University of Cambridge. Maths renders via MathJax and needs an internet connection on first load.</p>
   </div>
 </div>
@@ -325,7 +336,13 @@
       <div class="spec"><div class="k">Calculator</div><div class="v">Not permitted</div></div>
     </div>
 
-    <ul class="instructions">
+    <div class="pinbox hidden" id="companionRow" style="display:none"></div>
+    <ul class="instructions hidden" id="companionInstructions">
+      <li>This is a <b>companion entry</b>: it contains no questions. Open the <b>official paper</b> with the button above (it opens in a new tab), work through it on paper as normal, and record each answer on the A–H grid here.</li>
+      <li>The timer, flags, Review Screen and auto-submit behave exactly as in the real test. Scores feed your history and the shared leaderboard like any other paper.</li>
+      <li>After submitting, the review shows the correct letters from the official mark scheme; for worked solutions, use the official worked answers alongside.</li>
+    </ul>
+    <ul class="instructions" id="stdInstructions">
       <li>Select the <b>one</b> correct option for each question. There is no penalty for a wrong answer, so <b>attempt every question</b>.</li>
       <li>Tick <b>Flag for review</b> to mark a question to return to. Open the <b>Review Screen</b> at any time to see the status of every question and jump between them.</li>
       <li>The timer runs continuously. When it reaches zero the paper is <b>submitted automatically</b>.</li>
@@ -433,7 +450,46 @@
    Note: with these rules, anyone who has your site link can read and write
    leaderboard entries. Fine for a friend group; not tamper-proof.
    ========================================================================= */
-const LEADERBOARD_URL = 'https://tmua-leaderboard-default-rtdb.europe-west1.firebasedatabase.app/';
+const LEADERBOARD_URL = 'https://tmua-leaderboard-default-rtdb.europe-west1.firebasedatabase.app';
+
+/* =========================================================================
+   OFFICIAL PAST PAPERS (2016-2023) — COMPANION MODE
+   =========================================================================
+   These library entries contain NO official question content (the official
+   papers are licensed for personal use only, so they are not republished
+   here). Each entry gives a timed A-H answer grid to fill in while working
+   from the official PDF, which every user downloads themselves from the
+   official archive linked below.
+
+   To activate a paper, paste its 20-letter answer key below, read straight
+   from the OFFICIAL mark scheme (do not type keys from memory):
+     - exactly 20 characters, letters A-H, e.g. 'ABACDDBECA...'
+     - use X for a question officially voided/removed (excluded from scoring)
+   A paper stays locked (greyed out) until its key here is valid.
+   ========================================================================= */
+const OFFICIAL_ARCHIVE = 'https://esat-tmua.ac.uk/tmua-preparation-materials/';
+const OFFICIAL_PAPER_LINKS = {
+  /* Optional: direct link per paper, e.g. tmua2019p1:'https://...pdf'
+     Papers without an entry link to OFFICIAL_ARCHIVE. */
+};
+const OFFICIAL_KEYS = {
+  tmua2016p1:'HECBCCBFDEEECDCCDABD',
+  tmua2016p2:'ABDCCCCBDEDFEBDCHDFE',
+  tmua2017p1:'CCABCBBAFEABCFBEDADE',
+  tmua2017p2:'AEGBBAEEDDBCBFDCFBEB',
+  tmua2018p1:'DCEGDEADBECFCBEFABDE',
+  tmua2018p2:'CBFDACBDFBAFFEGFCCCB',
+  tmua2019p1:'AAECECFEDFHCBBACCBCE',
+  tmua2019p2:'ECADBDBEDAAFDBBFDEEB',
+  tmua2020p1:'CCBDACADCAEDFECCAAEC',
+  tmua2020p2:'EFCGAAHEFFGDDADDEGEC',
+  tmua2021p1:'FFGBFDGACBAECBCBABBD',
+  tmua2021p2:'DECCBDBCCECBACBEFCFE',
+  tmua2022p1:'CDFCHFEBECADADHBDBFB',
+  tmua2022p2:'BECBFCFCAGCFEDFDEEBE',
+  tmua2023p1:'FACCFEFBEBBFFAFEEEDF',
+  tmua2023p2:'HFCGAFEDDAGCCFBBFDHD'
+};
 
 /* ============================================================
    TMUA Test Simulator — verified papers, Pearson VUE-style UI
@@ -860,6 +916,31 @@ const PAPERS = [
   { id:'yotta2', title:'Mock Paper 2 · yotta', sub:'In the style of a TMUA Paper 2 · community-contributed', type:2, group:3, questions:YOTTA2 },
 ];
 
+function validOfficialKey(k){ return typeof k==='string' && /^[A-HX]{20}$/.test(k.toUpperCase()); }
+function makeCompanionPaper(year, pno){
+  const id='tmua'+year+'p'+pno;
+  const rawKey=(OFFICIAL_KEYS[id]||'').toUpperCase();
+  const locked=!validOfficialKey(rawKey);
+  const url=OFFICIAL_PAPER_LINKS[id]||OFFICIAL_ARCHIVE;
+  const questions=[];
+  if(!locked){
+    for(let i=0;i<20;i++){
+      const ch=rawKey[i];
+      const q={ n:i+1, companion:true,
+        stem:'Answer for <b>Question '+(i+1)+'</b> of the official '+year+' Paper '+pno+' — work from the official PDF (link on this paper\u2019s start screen), then select the letter here.',
+        opts:['','','','','','','',''],
+        correct: ch==='X' ? 99 : 'ABCDEFGH'.indexOf(ch),
+        sol:'Companion entry \u2014 the question and the official worked answer are in the official '+year+' materials (linked from this paper\u2019s start screen).' };
+      if(ch==='X'){ q.flawed=true; q.sol='This question was officially voided/excluded, so it is not scored here. See the official '+year+' materials for details.'; }
+      questions.push(q);
+    }
+  }
+  return { id, title:'TMUA '+year+' \u00b7 Paper '+pno,
+    sub: (pno===1?'Applications of Mathematical Knowledge':'Mathematical Reasoning')+' \u00b7 official paper, companion mode',
+    type:pno, group:4, companion:true, locked, url, questions };
+}
+for(let y=2016;y<=2023;y++){ PAPERS.push(makeCompanionPaper(y,1)); PAPERS.push(makeCompanionPaper(y,2)); }
+
 const LETTERS = ['A','B','C','D','E','F','G','H'];
 function isCorrectOpt(q,i){ return i===q.correct || (q.also && q.also.indexOf(i)!==-1); }
 function isCorrectAns(q,a){ return a!==null && isCorrectOpt(q,a); }
@@ -1006,11 +1087,11 @@ $('deleteProfileBtn').addEventListener('click', ()=>{
 
 /* ---------------- library ---------------- */
 function buildLibrary(){
-  const grids={1:$('grid1'),2:$('grid2'),3:$('grid3')};
+  const grids={1:$('grid1'),2:$('grid2'),3:$('grid3'),4:$('grid4')};
   Object.values(grids).forEach(g=>g.innerHTML='');
   PAPERS.forEach(p=>{
     const flawed=p.questions.filter(q=>q.flawed).length;
-    const tag = p.group===3 ? 'Full mock' : (p.type===1?'Applications':'Reasoning');
+    const tag = p.group===4 ? 'Official · companion' : (p.group===3 ? 'Full mock' : (p.type===1?'Applications':'Reasoning'));
     const hist=STATE.results[p.id]||[];
     const ip=STATE.inprogress[p.id];
     let stat='';
@@ -1020,15 +1101,24 @@ function buildLibrary(){
     }
     const b=document.createElement('button');
     b.className='paper t'+p.type;
-    b.innerHTML='<span class="pt">'+tag+'</span>'
-      +'<span class="pn">'+p.title+'</span>'
-      +'<span class="pd">'+p.sub+'</span>'
-      +'<span class="meta">'+p.questions.length+' questions'
-      +(flawed?' · '+flawed+' flagged':'')
-      +stat
-      +(ip?' · <span class="ip">In progress</span>':'')
-      +' <span class="go">Start &rarr;</span></span>';
-    b.addEventListener('click',()=>openStart(p));
+    if(p.locked){
+      b.className+=' locked';
+      b.innerHTML='<span class="pt">'+tag+'</span>'
+        +'<span class="pn">'+p.title+'</span>'
+        +'<span class="pd">'+p.sub+'</span>'
+        +'<span class="meta">Locked — answer key not entered yet (OFFICIAL_KEYS, top of this file)</span>';
+      b.disabled=true;
+    } else {
+      b.innerHTML='<span class="pt">'+tag+'</span>'
+        +'<span class="pn">'+p.title+'</span>'
+        +'<span class="pd">'+p.sub+'</span>'
+        +'<span class="meta">'+p.questions.length+' questions'
+        +(flawed?' · '+flawed+' flagged':'')
+        +stat
+        +(ip?' · <span class="ip">In progress</span>':'')
+        +' <span class="go">Start &rarr;</span></span>';
+      b.addEventListener('click',()=>openStart(p));
+    }
     (grids[p.group]||grids[1]).appendChild(b);
   });
 }
@@ -1041,6 +1131,20 @@ function openStart(p){
   $('startSub').textContent=p.sub+'.';
   $('startCount').textContent=p.questions.length;
   $('startTime').textContent = t===0 ? 'Untimed' : t+' minutes';
+
+  const cr=$('companionRow');
+  if(p.companion){
+    cr.style.display='flex';
+    cr.classList.remove('hidden');
+    cr.innerHTML='<span>Work from the official paper (opens in a new tab):</span>'
+      +'<a class="bigbtn" style="text-decoration:none" href="'+p.url+'" target="_blank" rel="noopener">Open official '+p.title.replace('TMUA ','')+' materials</a>';
+    $('companionInstructions').classList.remove('hidden');
+    $('stdInstructions').classList.add('hidden');
+  } else {
+    cr.style.display='none'; cr.classList.add('hidden'); cr.innerHTML='';
+    $('companionInstructions').classList.add('hidden');
+    $('stdInstructions').classList.remove('hidden');
+  }
 
   const recs=(STATE.results[p.id]||[]);
   const hist=recs.slice(-5).reverse();
@@ -1148,6 +1252,35 @@ function render(){
 
   const wrap=$('options'); wrap.innerHTML='';
   const flawedNoAns = (q.correct===99);
+  if(q.companion){
+    wrap.className='options companion';
+    q.opts.forEach((o,i)=>{
+      const b=document.createElement('button'); b.setAttribute('type','button');
+      let cls='';
+      if(reviewMode){
+        if(!flawedNoAns && isCorrectOpt(q,i)) cls=' correct';
+        else if(answers[idx]===i) cls=' wrong';
+      } else if(answers[idx]===i){ cls=' sel'; }
+      b.className='copt'+cls;
+      b.textContent=LETTERS[i];
+      if(!reviewMode) b.addEventListener('click',()=>choose(i));
+      wrap.appendChild(b);
+    });
+    const sol=$('solution');
+    if(reviewMode){ sol.classList.remove('hidden'); sol.innerHTML='<h4>Review</h4>'+q.sol; }
+    else { sol.classList.add('hidden'); sol.innerHTML=''; }
+    $('flagWrap').classList.toggle('hidden', reviewMode);
+    $('flagWrap').classList.toggle('on', flags[idx]);
+    $('flagChk').checked = !!flags[idx];
+    $('prevBtn').disabled=(idx===0);
+    const last=(idx===QUESTIONS.length-1);
+    $('nextBtn').textContent = last ? (reviewMode?'Finish review':'Next') : 'Next';
+    $('exitBtn').classList.toggle('hidden', reviewMode);
+    typeset($('testMain')); window.scrollTo(0,0);
+    snapshotProgress();
+    return;
+  }
+  wrap.className='options';
   q.opts.forEach((o,i)=>{
     const b=document.createElement('button'); b.setAttribute('type','button');
     let cls='';
