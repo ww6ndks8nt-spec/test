@@ -1,0 +1,1463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TMUA Test Simulator</title>
+<script>
+  window.MathJax = {
+    tex: { inlineMath: [['\\(', '\\)']], displayMath: [['\\[', '\\]']] },
+    svg: { fontCache: 'global' },
+    startup: { typeset: false }
+  };
+</script>
+<script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg.min.js"></script>
+<style>
+  :root{
+    --pv-navy:#00457c; --pv-navy-dark:#003760; --pv-navy-darker:#002b4c;
+    --pv-strip:#f2f4f6; --pv-line:#c9d1d9; --pv-line-2:#e2e7ec;
+    --ink:#1f2933; --ink-soft:#52606d;
+    --sel:#e8f1fa; --sel-line:#7fb0d9;
+    --amber:#b26a00; --amber-soft:#fff4e0;
+    --good:#1d7a4d; --good-soft:#e9f5ef; --bad:#b23b3b; --bad-soft:#f9ecec;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{font-family:Arial,Helvetica,"Segoe UI",sans-serif; background:#fff; color:var(--ink); line-height:1.55; font-size:16px}
+  button{font-family:inherit; cursor:pointer}
+  .hidden{display:none !important}
+
+  /* ---------- Pearson-style chrome ---------- */
+  header.bar{
+    position:fixed; top:0; left:0; right:0; height:52px; z-index:40;
+    background:var(--pv-navy); color:#fff; display:flex; align-items:center; padding:0 16px; gap:16px;
+    border-bottom:3px solid var(--pv-navy-darker);
+  }
+  .bar .title{font-size:14.5px; font-weight:bold; letter-spacing:.2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .bar .title small{display:block; font-weight:normal; font-size:11px; color:#bcd0e2}
+  .bar .spacer{flex:1}
+  .timewrap{display:flex; align-items:center; gap:8px; white-space:nowrap}
+  .timewrap .lbl{font-size:12px; color:#cfdeeb}
+  .timer{font-size:18px; font-weight:bold; font-variant-numeric:tabular-nums; letter-spacing:.5px; background:var(--pv-navy-dark); border:1px solid #135a94; padding:4px 10px; border-radius:3px; min-width:92px; text-align:center}
+  .timer.warn{background:var(--amber-soft); color:#7a4a00; border-color:#d9a55a}
+  .timer.crit{background:#f6dcdc; color:#8a1f1f; border-color:#d99a9a}
+
+  .substrip{
+    position:fixed; top:52px; left:0; right:0; height:38px; z-index:39;
+    background:var(--pv-strip); border-bottom:1px solid var(--pv-line);
+    display:flex; align-items:center; padding:0 16px; gap:16px; font-size:13.5px; color:var(--ink-soft);
+  }
+  .substrip b{color:var(--ink)}
+  .substrip .spacer{flex:1}
+  .flagwrap{display:inline-flex; align-items:center; gap:7px; font-size:13.5px; color:var(--ink-soft); cursor:pointer; user-select:none; padding:4px 8px; border-radius:3px}
+  .flagwrap:hover{background:#e8ecf0}
+  .flagwrap input{width:15px; height:15px; accent-color:var(--pv-navy); cursor:pointer}
+  .flagwrap .flg{color:var(--amber); font-size:15px}
+  .flagwrap.on{color:var(--amber); font-weight:bold}
+
+  main{padding:106px 0 76px; min-height:100vh; background:#fff}
+  .wrap{max-width:860px; margin:0 auto; padding:26px 24px}
+
+  .stem{font-size:17px; margin:2px 0 20px; line-height:1.65}
+  .stem .block{margin:13px 0; padding-left:4px}
+  .stem ul.roman{list-style:none; margin:10px 0; padding-left:6px}
+  .stem ul.roman li{margin:5px 0}
+  .stem ul.roman b{display:inline-block; min-width:2em; color:#111}
+
+  .options{display:flex; flex-direction:column; gap:2px; margin-top:6px}
+  .opt{
+    display:flex; align-items:flex-start; gap:12px; width:100%; text-align:left;
+    background:#fff; border:1px solid transparent; border-radius:3px; padding:10px 12px; font-size:16px; color:var(--ink);
+  }
+  .opt:hover{background:#f4f7fa}
+  .opt:focus-visible{outline:2px solid var(--pv-navy); outline-offset:1px}
+  .opt .radio{flex:0 0 auto; width:17px; height:17px; border:2px solid #6b7886; border-radius:50%; background:#fff; margin-top:3px; position:relative}
+  .opt .letter{flex:0 0 auto; font-weight:bold; color:var(--ink-soft); width:1.4em; padding-top:1px}
+  .opt .body{flex:1; padding-top:1px}
+  .opt.sel{background:var(--sel); border-color:var(--sel-line)}
+  .opt.sel .radio{border-color:var(--pv-navy)}
+  .opt.sel .radio::after{content:""; position:absolute; inset:3px; background:var(--pv-navy); border-radius:50%}
+  .opt.sel .letter{color:var(--pv-navy)}
+  .opt.correct{background:var(--good-soft); border-color:var(--good)}
+  .opt.correct .radio{border-color:var(--good)}
+  .opt.wrong{background:var(--bad-soft); border-color:var(--bad)}
+  .opt.wrong .radio{border-color:var(--bad)}
+  .opt.wrong .radio::after{content:""; position:absolute; inset:3px; background:var(--bad); border-radius:50%}
+  .opt .mark{margin-left:auto; font-size:12px; font-weight:bold; align-self:center}
+  .opt.correct .mark{color:var(--good)} .opt.wrong .mark{color:var(--bad)}
+
+  .solution{margin-top:22px; border:1px solid var(--pv-line); border-left:4px solid var(--pv-navy); background:#f8fafc; border-radius:3px; padding:14px 18px; font-size:15px; color:#2c3a49}
+  .solution h4{margin:0 0 7px; font-size:11.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--pv-navy)}
+
+  footer.actions{
+    position:fixed; bottom:0; left:0; right:0; height:60px; z-index:40;
+    background:var(--pv-navy); border-top:3px solid var(--pv-navy-darker);
+    display:flex; align-items:center; padding:0 16px; gap:12px;
+  }
+  .pvbtn{
+    background:#fff; color:var(--pv-navy); border:1px solid #fff; border-radius:3px;
+    padding:9px 22px; font-size:14.5px; font-weight:bold; min-width:104px;
+  }
+  .pvbtn:hover:not(:disabled){background:#dce9f5}
+  .pvbtn:disabled{opacity:.45; cursor:default}
+  .pvbtn.ghost{background:transparent; color:#fff; border-color:#7fa8ca; min-width:0}
+  .pvbtn.ghost:hover{background:var(--pv-navy-dark)}
+  .actions .spacer{flex:1}
+
+  /* ---------- Screens (library / start / results) ---------- */
+  .screen{position:fixed; inset:0; z-index:50; background:#eef1f4; display:flex; align-items:flex-start; justify-content:center; overflow-y:auto; padding:34px 20px}
+  .card{background:#fff; border:1px solid var(--pv-line); border-radius:6px; max-width:780px; width:100%; padding:34px 40px; box-shadow:0 6px 24px rgba(10,40,70,.08)}
+  .brandline{font-size:11.5px; letter-spacing:.2em; text-transform:uppercase; color:var(--pv-navy); font-weight:bold}
+  .card h1{font-size:26px; margin:8px 0 4px; color:var(--pv-navy-darker)}
+  .lead{color:var(--ink-soft); font-size:15px; margin:0 0 22px; max-width:62ch}
+
+  .libhead{display:flex; align-items:center; justify-content:space-between; gap:20px; flex-wrap:wrap; margin-bottom:6px}
+  .timepick{display:inline-flex; align-items:center; gap:8px; font-size:13.5px; color:var(--ink-soft)}
+  .timepick select{font:inherit; padding:7px 9px; border:1px solid var(--pv-line); border-radius:3px; color:var(--ink)}
+  .group-label{font-size:11.5px; letter-spacing:.14em; text-transform:uppercase; font-weight:bold; color:var(--ink-soft); margin:20px 0 9px}
+  .paper-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+  @media(max-width:620px){.paper-grid{grid-template-columns:1fr}}
+  .paper{
+    text-align:left; background:#fff; border:1px solid var(--pv-line); border-radius:4px; padding:16px 16px 14px;
+    display:flex; flex-direction:column; gap:3px; border-left:4px solid var(--pv-navy);
+    transition:box-shadow .1s;
+  }
+  .paper:hover{box-shadow:0 4px 14px rgba(10,40,70,.12)}
+  .paper.t2{border-left-color:#6b4aa0}
+  .paper .pt{font-size:10.5px; font-weight:bold; letter-spacing:.1em; text-transform:uppercase; color:var(--pv-navy)}
+  .paper.t2 .pt{color:#6b4aa0}
+  .paper .pn{font-size:17px; font-weight:bold; color:var(--pv-navy-darker)}
+  .paper .pd{font-size:13px; color:var(--ink-soft)}
+  .paper .meta{margin-top:8px; display:flex; gap:12px; font-size:12px; color:var(--ink-soft); align-items:center}
+  .paper .meta .go{margin-left:auto; font-weight:bold; color:var(--pv-navy)}
+  .libnote{font-size:12px; color:var(--ink-soft); margin-top:24px; line-height:1.5; border-top:1px solid var(--pv-line-2); padding-top:14px}
+  .paper .meta .ip{color:var(--amber); font-weight:bold}
+
+  .attempts{border:1px solid var(--pv-line-2); border-radius:4px; margin:0 0 22px; overflow:hidden}
+  .attempts .ahead{background:var(--pv-strip); font-size:11px; text-transform:uppercase; letter-spacing:.08em; padding:7px 14px; color:var(--ink-soft); font-weight:bold}
+  .attempts .arow{display:flex; gap:16px; padding:8px 14px; font-size:13px; border-bottom:1px solid var(--pv-line-2); color:var(--ink-soft)}
+  .attempts .arow:last-child{border-bottom:none}
+  .attempts .arow b{color:var(--pv-navy-darker)}
+  .attempts .arow .sc{margin-left:auto}
+  .attempts .arow.clickable{cursor:pointer}
+  .attempts .arow.clickable:hover{background:#f0f5fa}
+  .attempts .arow .rv{color:var(--pv-navy); font-weight:bold; font-size:12px}
+  .attempts .arow.me{background:var(--sel)}
+  .attempts .arow .rk{min-width:2em; font-weight:bold; color:var(--pv-navy-darker)}
+  .attempts .arow .md{font-size:11px; color:var(--ink-soft); border:1px solid var(--pv-line); border-radius:3px; padding:1px 6px; align-self:center}
+
+  .qgrid{overflow-x:auto; border:1px solid var(--pv-line-2); border-radius:4px; margin:0 0 22px}
+  .qgrid table{border-collapse:collapse; font-size:11.5px; width:100%}
+  .qgrid th,.qgrid td{border:1px solid var(--pv-line-2); padding:4px 6px; text-align:center; white-space:nowrap}
+  .qgrid th{background:var(--pv-strip); color:var(--ink-soft); font-size:10px; text-transform:uppercase; letter-spacing:.03em}
+  .qgrid td.lab,.qgrid th.lab{text-align:left; color:var(--ink-soft); font-size:11px; position:sticky; left:0; background:#fff}
+  .qgrid th.lab{background:var(--pv-strip)}
+  .qgrid td.ok{color:var(--good); font-weight:bold}
+  .qgrid td.no{color:var(--bad); font-weight:bold}
+  .qgrid td.sk{color:#b3bcc4}
+  .qgrid tr.agg td{background:#f8fafc; font-weight:bold; color:var(--pv-navy-darker)}
+
+  .profline{font-size:13px; color:var(--ink-soft); margin:-6px 0 14px}
+  .profline b{color:var(--pv-navy-darker)}
+  .linkbtn{background:none; border:none; color:var(--pv-navy); font-weight:bold; cursor:pointer; padding:0; font-size:13px}
+  .linkbtn:hover{text-decoration:underline}
+  .profrow{display:flex; align-items:center; gap:12px; border:1px solid var(--pv-line); border-radius:4px; padding:13px 16px; margin-bottom:10px; cursor:pointer; background:#fff; width:100%; text-align:left}
+  .profrow:hover{box-shadow:0 3px 12px rgba(10,40,70,.12)}
+  .profrow .pname{font-weight:bold; font-size:16px; color:var(--pv-navy-darker)}
+  .profrow .pstats{font-size:12px; color:var(--ink-soft)}
+  .profrow .lock{color:var(--ink-soft); font-size:13px}
+  .profrow .del{margin-left:auto; background:none; border:none; color:var(--bad); font-size:13px; padding:4px 8px; font-weight:bold}
+  .profrow .del:hover{text-decoration:underline}
+  .txt{padding:9px 11px; border:1px solid var(--pv-line); border-radius:3px; font:inherit; font-size:14px}
+  .newprof{display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:10px}
+  .pinbox{border:1px solid var(--pv-line); border-left:4px solid var(--pv-navy); background:#f8fafc; border-radius:3px; padding:14px 16px; margin:4px 0 14px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; font-size:14px}
+  .formerr{color:var(--bad); font-size:13px; margin-top:8px; min-height:1.2em}
+
+  .specs{display:grid; grid-template-columns:repeat(2,1fr); gap:1px; background:var(--pv-line); border:1px solid var(--pv-line); border-radius:4px; overflow:hidden; margin:0 0 24px}
+  .spec{background:#fff; padding:13px 16px}
+  .spec .k{font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-soft)}
+  .spec .v{font-size:18px; font-weight:bold; color:var(--pv-navy-darker); margin-top:2px}
+  .instructions{border:1px solid var(--pv-line-2); border-radius:4px; padding:5px 20px; margin:0 0 24px; background:#f8fafc}
+  .instructions li{margin:10px 0; font-size:14px; color:#33414f}
+  .instructions li b{color:var(--pv-navy-darker)}
+  .startrow{display:flex; align-items:center; gap:16px; flex-wrap:wrap}
+  .bigbtn{background:var(--pv-navy); color:#fff; border:none; border-radius:4px; padding:13px 28px; font-size:15px; font-weight:bold}
+  .bigbtn:hover{background:var(--pv-navy-dark)}
+  .bigbtn.ghost{background:#fff; color:var(--pv-navy); border:1px solid var(--pv-line)}
+  .bigbtn.ghost:hover{background:#f0f4f8}
+  .linkback{background:none; border:none; color:var(--pv-navy); font-size:13.5px; font-weight:bold; padding:5px 0; margin-bottom:2px}
+  .linkback:hover{text-decoration:underline}
+
+  /* ---------- Review Screen (Pearson-style navigator) ---------- */
+  .navover{position:fixed; inset:0; z-index:60; background:#fff; display:flex; flex-direction:column}
+  .navhead{background:var(--pv-navy); color:#fff; height:52px; display:flex; align-items:center; padding:0 18px; font-size:16px; font-weight:bold; border-bottom:3px solid var(--pv-navy-darker)}
+  .navbody{flex:1; overflow-y:auto; padding:20px 24px 90px}
+  .navbody .inner{max-width:720px; margin:0 auto}
+  .navbody p.help{font-size:13.5px; color:var(--ink-soft); margin:4px 0 14px}
+  .navsummary{font-size:13.5px; color:var(--ink-soft); margin-bottom:14px}
+  .navsummary b{color:var(--ink)}
+  table.navtable{width:100%; border-collapse:collapse; font-size:14px}
+  .navtable th{background:var(--pv-strip); text-align:left; padding:8px 12px; border:1px solid var(--pv-line); font-size:12.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft)}
+  .navtable td{padding:8px 12px; border:1px solid var(--pv-line-2)}
+  .navtable tr.row{cursor:pointer}
+  .navtable tr.row:hover td{background:#f0f5fa}
+  .navtable tr.current td{background:var(--sel)}
+  .navtable .st-ans{color:var(--pv-navy); font-weight:bold}
+  .navtable .st-un{color:var(--bad)}
+  .navtable .flg{color:var(--amber); font-weight:bold}
+  .navfoot{position:fixed; bottom:0; left:0; right:0; height:60px; background:var(--pv-navy); border-top:3px solid var(--pv-navy-darker); display:flex; align-items:center; padding:0 16px; gap:12px}
+  .navfoot .spacer{flex:1}
+  .endbtn{background:#fff; color:#8a1f1f; border:1px solid #fff; border-radius:3px; padding:9px 22px; font-weight:bold; font-size:14.5px}
+  .endbtn:hover{background:#f6dcdc}
+
+  /* ---------- Results ---------- */
+  .scorehead{display:flex; align-items:center; gap:30px; flex-wrap:wrap; margin:2px 0 24px}
+  .dial{width:128px; height:128px; border-radius:50%; flex:0 0 auto; display:flex; align-items:center; justify-content:center; background:conic-gradient(var(--pv-navy) var(--pct), #e3e8ee 0)}
+  .dial .inner{width:100px; height:100px; border-radius:50%; background:#fff; display:flex; flex-direction:column; align-items:center; justify-content:center; color:var(--pv-navy-darker)}
+  .dial .raw{font-size:28px; font-weight:bold; line-height:1}
+  .dial .of{font-size:12px; color:var(--ink-soft); margin-top:2px}
+  .scoremeta h2{margin:0 0 4px; font-size:21px; color:var(--pv-navy-darker)}
+  .scoremeta .band{font-size:14.5px; color:var(--ink-soft)}
+  .scoremeta .band b{color:var(--pv-navy); font-size:17px}
+  .band-note{font-size:12px; color:var(--ink-soft); margin-top:8px; max-width:440px; line-height:1.5}
+  .breakdown{border:1px solid var(--pv-line); border-radius:4px; overflow:hidden; margin:22px 0}
+  .brow{display:flex; align-items:center; gap:12px; padding:10px 14px; border-bottom:1px solid var(--pv-line-2); font-size:14px}
+  .brow:last-child{border-bottom:none}
+  .brow .qn{width:60px; color:var(--ink-soft); font-size:12.5px}
+  .brow .ans{width:150px; color:var(--ink-soft); font-size:12.5px}
+  .brow .ans b{color:var(--ink)}
+  .brow .res{margin-left:auto; font-weight:bold; font-size:12px; letter-spacing:.03em}
+  .brow.ok .res{color:var(--good)} .brow.no .res{color:var(--bad)} .brow.skip .res{color:var(--ink-soft)}
+  .brow .chip{width:9px; height:9px; border-radius:50%}
+  .brow.ok .chip{background:var(--good)} .brow.no .chip{background:var(--bad)} .brow.skip .chip{background:#c3ccd4}
+  .resbtns{display:flex; gap:12px; flex-wrap:wrap; margin-top:6px}
+  .fineprint{font-size:12px; color:var(--ink-soft); margin-top:20px; line-height:1.5}
+
+  @media(max-width:640px){
+    .card{padding:26px 20px}
+    .wrap{padding:20px 14px}
+    .bar .title small{display:none}
+    .substrip{font-size:12.5px}
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ LOGIN ============ -->
+<div class="screen" id="loginScreen">
+  <div class="card">
+    <div class="brandline">Test of Mathematics for University Admission</div>
+    <h1>Who's practising?</h1>
+    <p class="lead">Profiles keep progress, per-question history and resumable sessions separate for each person on this device. An optional PIN stops others opening your profile here — it's device-local privacy, not real account security.</p>
+    <div id="profileList"></div>
+    <div class="pinbox hidden" id="pinBox">
+      <span id="pinPrompt">Enter PIN</span>
+      <input class="txt" id="pinInput" type="password" inputmode="numeric" maxlength="12" style="width:110px" placeholder="PIN">
+      <button class="bigbtn" id="pinGo">Sign in</button>
+      <button class="bigbtn ghost" id="pinCancel">Cancel</button>
+    </div>
+    <div class="group-label">New profile</div>
+    <div class="newprof">
+      <input class="txt" id="newName" maxlength="24" placeholder="Name">
+      <input class="txt" id="newPin" type="password" inputmode="numeric" maxlength="12" style="width:150px" placeholder="PIN (optional)">
+      <button class="bigbtn" id="createBtn">Create &amp; sign in</button>
+    </div>
+    <div class="formerr" id="loginErr"></div>
+    <p class="libnote">All data stays in this browser's storage on this device. Anyone with access to the device and its developer tools could read it — don't reuse a PIN that matters.</p>
+  </div>
+</div>
+
+<!-- ============ LIBRARY ============ -->
+<div class="screen hidden" id="libraryScreen">
+  <div class="card">
+    <div class="brandline">Test of Mathematics for University Admission</div>
+    <h1>Test Simulator</h1>
+    <div class="profline">Signed in as <b id="profName"></b> · <button class="linkbtn" id="signOutBtn">Switch user</button></div>
+    <p class="lead">Timed practice papers presented in a Pearson VUE-style computer-based testing interface: status bar with the time remaining, flag for review, a Review Screen listing every question, and automatic submission when time expires. Worked solutions appear after each paper. Every answer key is computationally verified.</p>
+
+    <div class="libhead">
+      <div class="group-label" style="margin:0">Choose a paper</div>
+      <label class="timepick">Time allowed
+        <select id="timeSelect">
+          <option value="75">75 minutes (exam)</option>
+          <option value="60">60 minutes</option>
+          <option value="45">45 minutes</option>
+          <option value="0">No timer</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="group-label">Paper 1 — Applications of Mathematical Knowledge</div>
+    <div class="paper-grid" id="grid1"></div>
+
+    <div class="group-label">Paper 2 — Mathematical Reasoning</div>
+    <div class="paper-grid" id="grid2"></div>
+
+    <div class="group-label">Full-length mocks (community-contributed)</div>
+    <div class="paper-grid" id="grid3"></div>
+
+    <p class="libnote">Progress is saved automatically per profile in this browser: leave mid-paper (or use Save &amp; exit) and resume later with the timer intact; every completed attempt keeps its full answer sheet, feeding the per-question history on each paper's start screen. Clearing site data erases everything. Independent practice tool — not affiliated with or endorsed by UAT-UK, Pearson VUE, or the University of Cambridge. Maths renders via MathJax and needs an internet connection on first load.</p>
+  </div>
+</div>
+
+<!-- ============ START (per paper) ============ -->
+<div class="screen hidden" id="startScreen">
+  <div class="card">
+    <button class="linkback" id="backToLib1">&larr; All papers</button>
+    <div class="brandline" id="startBrand">Paper</div>
+    <h1 id="startTitle">Paper</h1>
+    <p class="lead" id="startSub"></p>
+
+    <div class="specs">
+      <div class="spec"><div class="k">Questions</div><div class="v" id="startCount">20</div></div>
+      <div class="spec"><div class="k">Time allowed</div><div class="v" id="startTime">75 minutes</div></div>
+      <div class="spec"><div class="k">Marking</div><div class="v">1 mark each · no penalty</div></div>
+      <div class="spec"><div class="k">Calculator</div><div class="v">Not permitted</div></div>
+    </div>
+
+    <ul class="instructions">
+      <li>Select the <b>one</b> correct option for each question. There is no penalty for a wrong answer, so <b>attempt every question</b>.</li>
+      <li>Tick <b>Flag for review</b> to mark a question to return to. Open the <b>Review Screen</b> at any time to see the status of every question and jump between them.</li>
+      <li>The timer runs continuously. When it reaches zero the paper is <b>submitted automatically</b>.</li>
+      <li>Keyboard: letter keys or <b>1–8</b> to answer · <b>← →</b> to move · <b>F</b> to flag · <b>R</b> for the Review Screen.</li>
+    </ul>
+
+    <div class="attempts hidden" id="attemptHist"></div>
+    <div class="qgrid hidden" id="qGrid"></div>
+
+    <div class="startrow">
+      <button class="bigbtn" id="beginBtn">Begin test</button>
+      <button class="bigbtn ghost hidden" id="resumeBtn">Resume saved session</button>
+    </div>
+
+    <div class="attempts hidden" id="lbCard" style="margin-top:26px"></div>
+  </div>
+</div>
+
+<!-- ============ TEST CHROME ============ -->
+<header class="bar hidden" id="topbar">
+  <div class="title">Test of Mathematics for University Admission<small id="barSub">Practice simulation</small></div>
+  <div class="spacer"></div>
+  <div class="timewrap"><span class="lbl">Time Remaining</span><span class="timer" id="timer">1:15:00</span></div>
+</header>
+
+<div class="substrip hidden" id="substrip">
+  <span>Question <b id="progNow">1</b> of <b id="progTot">20</b></span>
+  <span class="spacer"></span>
+  <label class="flagwrap" id="flagWrap"><input type="checkbox" id="flagChk"><span class="flg">&#9873;</span> Flag for review</label>
+</div>
+
+<main class="hidden" id="testMain">
+  <div class="wrap">
+    <div class="stem" id="stem"></div>
+    <div class="options" id="options"></div>
+    <div class="solution hidden" id="solution"></div>
+  </div>
+</main>
+
+<footer class="actions hidden" id="footbar">
+  <button class="pvbtn ghost" id="reviewBtn">Review Screen</button>
+  <button class="pvbtn ghost" id="exitBtn">Save &amp; exit</button>
+  <div class="spacer"></div>
+  <button class="pvbtn" id="prevBtn">Previous</button>
+  <button class="pvbtn" id="nextBtn">Next</button>
+</footer>
+
+<!-- ============ REVIEW SCREEN ============ -->
+<div class="navover hidden" id="navOver">
+  <div class="navhead">Review Screen</div>
+  <div class="navbody"><div class="inner">
+    <p class="help">The table below shows the status of every question. Select a question to return to it. Flagged questions are marked with &#9873;.</p>
+    <div class="navsummary"><b id="answeredCount">0</b> answered · <b id="unansweredCount">0</b> unanswered · <b id="flaggedCount">0</b> flagged</div>
+    <table class="navtable">
+      <thead><tr><th style="width:40%">Question</th><th style="width:35%">Status</th><th>Flagged</th></tr></thead>
+      <tbody id="navTable"></tbody>
+    </table>
+  </div></div>
+  <div class="navfoot">
+    <button class="pvbtn" id="navClose">Return to question</button>
+    <span class="spacer"></span>
+    <button class="endbtn" id="endBtn">End Exam</button>
+  </div>
+</div>
+
+<!-- ============ RESULTS ============ -->
+<div class="screen hidden" id="resultScreen">
+  <div class="card">
+    <div class="brandline" id="resBrand">Result</div>
+    <div class="scorehead">
+      <div class="dial" id="dial"><div class="inner"><div class="raw" id="rawScore">0</div><div class="of">/ 20</div></div></div>
+      <div class="scoremeta">
+        <h2 id="pctText">0%</h2>
+        <div class="band">Estimated scaled band: <b id="bandText">—</b></div>
+        <p class="band-note">Estimate only, from historical raw-to-scaled patterns (≈85%+ has mapped to 9.0). Real conversions are set per sitting and unpublished, so treat this as indicative.</p>
+      </div>
+    </div>
+    <div class="breakdown" id="breakdown"></div>
+    <div class="resbtns">
+      <button class="bigbtn" id="reviewAnswersBtn">Review answers &amp; solutions</button>
+      <button class="bigbtn ghost" id="retakeBtn">Retake</button>
+      <button class="bigbtn ghost" id="backToLib2">All papers</button>
+    </div>
+    <div class="fineprint" id="lbNote"></div>
+  </div>
+</div>
+
+<script>
+/* =========================================================================
+   LEADERBOARD SETUP (optional — enables a shared, public leaderboard)
+   =========================================================================
+   1. Go to console.firebase.google.com → Add project (Analytics not needed).
+   2. Build → Realtime Database → Create database (pick a nearby region,
+      e.g. europe-west1) → start in locked mode.
+   3. In the Rules tab, replace the rules with exactly:
+
+        { "rules": { "leaderboards": { ".read": true, ".write": true } } }
+
+      then press Publish.
+   4. Copy the database URL shown at the top of the Data tab — it looks like
+      https://your-project-default-rtdb.europe-west1.firebasedatabase.app
+      — and paste it between the quotes below.
+
+   Leave it as '' to disable the leaderboard (everything else still works).
+   Note: with these rules, anyone who has your site link can read and write
+   leaderboard entries. Fine for a friend group; not tamper-proof.
+   ========================================================================= */
+const LEADERBOARD_URL = '';
+
+/* ============================================================
+   TMUA Test Simulator — verified papers, Pearson VUE-style UI
+   ============================================================ */
+const P1A = [
+{ n:1, stem:'Given that \\(2^{x}=3\\) and \\(3^{y}=4\\), find the value of \\(2^{xy}\\).',
+  opts:['\\(3\\)','\\(4\\)','\\(6\\)','\\(8\\)','\\(12\\)'], correct:1,
+  sol:'\\(2^{xy}=(2^{x})^{y}=3^{y}=4\\).' },
+{ n:2, stem:'Evaluate \\(\\log_{2}3\\cdot\\log_{3}4\\cdot\\log_{4}5\\cdots\\log_{63}64\\).',
+  opts:['\\(5\\)','\\(6\\)','\\(31\\)','\\(32\\)','\\(63\\)'], correct:1,
+  sol:'The product telescopes: \\(\\dfrac{\\ln3}{\\ln2}\\cdot\\dfrac{\\ln4}{\\ln3}\\cdots\\dfrac{\\ln64}{\\ln63}=\\dfrac{\\ln64}{\\ln2}=\\log_{2}64=6\\).' },
+{ n:3, stem:'Evaluate \\(\\displaystyle\\sum_{k=1}^{10}k\\cdot k!\\).',
+  opts:['\\(10!-1\\)','\\(11!-1\\)','\\(11!\\)','\\(10\\cdot10!\\)','\\(11!+1\\)'], correct:1,
+  sol:'\\(k\\cdot k!=(k+1)!-k!\\), so the sum telescopes to \\(11!-1\\).' },
+{ n:4, stem:'Find the area of the region enclosed between the curves \\(y=x^{2}\\) and \\(y=2x-x^{2}\\).',
+  opts:['\\(\\tfrac16\\)','\\(\\tfrac14\\)','\\(\\tfrac13\\)','\\(\\tfrac12\\)','\\(\\tfrac23\\)'], correct:2,
+  sol:'They meet at \\(x=0,1\\). Area \\(=\\int_0^1\\big[(2x-x^{2})-x^{2}\\big]dx=\\int_0^1(2x-2x^{2})dx=\\tfrac13\\).' },
+{ n:5, stem:'How many solutions does \\(\\cos 2x=\\sin x\\) have in the interval \\(0\\le x<2\\pi\\)?',
+  opts:['\\(1\\)','\\(2\\)','\\(3\\)','\\(4\\)','\\(5\\)'], correct:2,
+  sol:'\\(1-2\\sin^{2}x=\\sin x\\Rightarrow(2\\sin x-1)(\\sin x+1)=0\\), so \\(\\sin x=\\tfrac12\\) (\\(x=\\tfrac{\\pi}{6},\\tfrac{5\\pi}{6}\\)) or \\(\\sin x=-1\\) (\\(x=\\tfrac{3\\pi}{2}\\)). Three solutions.' },
+{ n:6, stem:'Find the minimum value of \\(9^{x}-3^{\\,x+1}+5\\) over all real \\(x\\).',
+  opts:['\\(2\\)','\\(3\\)','\\(\\tfrac{11}{4}\\)','\\(5\\)','\\(\\tfrac{23}{4}\\)'], correct:2,
+  sol:'Let \\(t=3^{x}>0\\): \\(t^{2}-3t+5\\), minimised at \\(t=\\tfrac32\\), giving \\(\\tfrac94-\\tfrac92+5=\\tfrac{11}{4}\\).' },
+{ n:7, stem:'A circle passes through the points \\((0,0)\\), \\((4,0)\\) and \\((0,6)\\). What is its radius?',
+  opts:['\\(\\sqrt{10}\\)','\\(\\sqrt{13}\\)','\\(5\\)','\\(2\\sqrt{13}\\)','\\(\\sqrt{52}\\)'], correct:1,
+  sol:'The angle at the origin is right, so the segment from \\((4,0)\\) to \\((0,6)\\) is a diameter; the centre is \\((2,3)\\) and \\(r=\\sqrt{2^{2}+3^{2}}=\\sqrt{13}\\).' },
+{ n:8, stem:'Find the coefficient of \\(x^{5}\\) in the expansion of \\((1+x)(1-2x)^{8}\\).',
+  opts:['\\(-1792\\)','\\(-1120\\)','\\(-672\\)','\\(448\\)','\\(1120\\)'], correct:2,
+  sol:'Coefficient \\(=\\binom{8}{5}(-2)^{5}+\\binom{8}{4}(-2)^{4}=-1792+1120=-672\\).' },
+{ n:9, stem:'A sequence satisfies \\(a_{1}=1\\) and \\(a_{n+1}=\\dfrac{a_{n}}{1+a_{n}}\\). Find \\(a_{10}\\).',
+  opts:['\\(\\tfrac{1}{11}\\)','\\(\\tfrac{1}{10}\\)','\\(\\tfrac{1}{9}\\)','\\(\\tfrac{1}{1024}\\)','\\(10\\)'], correct:1,
+  sol:'\\(\\dfrac{1}{a_{n+1}}=\\dfrac{1}{a_{n}}+1\\), so \\(\\dfrac1{a_n}=n\\) and \\(a_{n}=\\tfrac1n\\); hence \\(a_{10}=\\tfrac1{10}\\).' },
+{ n:10, stem:'Evaluate \\(\\displaystyle\\int_{0}^{\\pi/2}\\dfrac{\\sin x}{\\sin x+\\cos x}\\,dx\\).',
+  opts:['\\(\\tfrac{\\pi}{6}\\)','\\(\\tfrac{\\pi}{4}\\)','\\(\\tfrac{\\pi}{3}\\)','\\(\\tfrac{\\pi}{2}\\)','\\(1\\)'], correct:1,
+  sol:'Under \\(x\\mapsto\\tfrac{\\pi}{2}-x\\) the integral becomes \\(\\int_0^{\\pi/2}\\tfrac{\\cos x}{\\sin x+\\cos x}dx\\). Adding the two gives \\(2I=\\int_0^{\\pi/2}1\\,dx=\\tfrac{\\pi}{2}\\), so \\(I=\\tfrac{\\pi}{4}\\).' },
+{ n:11, stem:'For how many integers \\(n\\) with \\(1\\le n\\le 1000\\) is \\(\\lfloor\\log_{10}n\\rfloor\\) even?',
+  opts:['\\(9\\)','\\(900\\)','\\(909\\)','\\(910\\)','\\(990\\)'], correct:2,
+  sol:'\\(\\lfloor\\log_{10}n\\rfloor=0\\) for \\(1\\!-\\!9\\) (9 values) and \\(=2\\) for \\(100\\!-\\!999\\) (900 values), both even; \\(n=1000\\) gives \\(3\\) (odd). Total \\(909\\).' },
+{ n:12, stem:'Evaluate \\(\\tan 20^{\\circ}\\,\\tan 40^{\\circ}\\,\\tan 80^{\\circ}\\).',
+  opts:['\\(\\tfrac{1}{\\sqrt3}\\)','\\(1\\)','\\(\\sqrt3\\)','\\(3\\)','\\(2\\sqrt3\\)'], correct:2,
+  sol:'Using \\(\\tan\\theta\\tan(60^{\\circ}-\\theta)\\tan(60^{\\circ}+\\theta)=\\tan3\\theta\\) with \\(\\theta=20^{\\circ}\\) gives \\(\\tan60^{\\circ}=\\sqrt3\\).' },
+{ n:13, stem:'Let \\(f(x)=1-\\dfrac1x\\). Find \\(f\\big(f(f(x))\\big)\\).',
+  opts:['\\(x\\)','\\(1-\\tfrac1x\\)','\\(\\tfrac{1}{1-x}\\)','\\(-\\tfrac1x\\)','\\(\\tfrac1x\\)'], correct:0,
+  sol:'This M\u00f6bius map has order 3: \\(f(f(x))=\\dfrac{1}{1-x}\\) and \\(f(f(f(x)))=x\\).' },
+{ n:14, stem:'Two fair six-sided dice are rolled. What is the probability that the product of the two numbers shown is a multiple of 3?',
+  opts:['\\(\\tfrac13\\)','\\(\\tfrac49\\)','\\(\\tfrac12\\)','\\(\\tfrac59\\)','\\(\\tfrac{11}{36}\\)'], correct:3,
+  sol:'The product is a multiple of 3 unless neither die shows 3 or 6: \\(1-\\left(\\tfrac{4}{6}\\right)^{2}=1-\\tfrac{16}{36}=\\tfrac{5}{9}\\).' },
+{ n:15, stem:'Evaluate \\(\\displaystyle\\sum_{n=1}^{\\infty}\\dfrac{1}{n(n+2)}\\).',
+  opts:['\\(\\tfrac12\\)','\\(\\tfrac23\\)','\\(\\tfrac34\\)','\\(1\\)','\\(\\tfrac32\\)'], correct:2,
+  sol:'\\(\\dfrac{1}{n(n+2)}=\\tfrac12\\!\\left(\\dfrac1n-\\dfrac1{n+2}\\right)\\); the telescoped sum is \\(\\tfrac12\\left(1+\\tfrac12\\right)=\\tfrac34\\).' },
+{ n:16, stem:'The line \\(y=mx\\) (with \\(m>0\\)) is tangent to the curve \\(y=e^{x}\\). Find \\(m\\).',
+  opts:['\\(1\\)','\\(\\tfrac1e\\)','\\(e\\)','\\(e^{2}\\)','\\(2\\)'], correct:2,
+  sol:'At the point of tangency \\(x=a\\): \\(e^{a}=m\\) and \\(e^{a}=ma\\). Dividing gives \\(a=1\\), so \\(m=e\\).' },
+{ n:17, stem:'Given that \\(x+\\dfrac1x=3\\), find \\(x^{3}+\\dfrac{1}{x^{3}}\\).',
+  opts:['\\(9\\)','\\(18\\)','\\(21\\)','\\(27\\)','\\(36\\)'], correct:1,
+  sol:'\\(\\left(x+\\tfrac1x\\right)^{3}=x^{3}+\\tfrac1{x^{3}}+3\\left(x+\\tfrac1x\\right)\\Rightarrow 27=S+9\\Rightarrow S=18\\).' },
+{ n:18, stem:'Find the minimum value of \\(\\dfrac{x^{2}+5x+4}{x}\\) for \\(x>0\\).',
+  opts:['\\(4\\)','\\(5\\)','\\(8\\)','\\(9\\)','\\(10\\)'], correct:3,
+  sol:'\\(\\dfrac{x^{2}+5x+4}{x}=x+5+\\dfrac4x\\ge 5+2\\sqrt{4}=9\\) by AM\u2013GM, with equality at \\(x=2\\).' },
+{ n:19, stem:'A regular hexagon has area \\(6\\). Three of its vertices, taken alternately, form a triangle. What is the area of that triangle?',
+  opts:['\\(2\\)','\\(3\\)','\\(4\\)','\\(3\\sqrt3\\)','\\(6\\)'], correct:1,
+  sol:'Joining alternate vertices of a regular hexagon gives an equilateral triangle whose area is exactly half the area of the hexagon, so \\(3\\).' },
+{ n:20, stem:'Find the remainder when \\(7^{100}\\) is divided by \\(100\\).',
+  opts:['\\(1\\)','\\(7\\)','\\(43\\)','\\(49\\)','\\(51\\)'], correct:0,
+  sol:'\\(7^{4}=2401\\equiv1\\pmod{100}\\), and \\(7^{100}=(7^{4})^{25}\\equiv1\\pmod{100}\\).' }
+];
+const P1B = [
+{ n:1, stem:'Evaluate \\(\\left(\\sqrt[3]{2}\\right)^{\\log_{2}27}\\).',
+  opts:['\\(2\\)','\\(3\\)','\\(9\\)','\\(27\\)','\\(\\sqrt3\\)'], correct:1,
+  sol:'\\(\\left(2^{1/3}\\right)^{\\log_{2}27}=2^{\\log_{2}27^{1/3}}=27^{1/3}=3\\).' },
+{ n:2, stem:'Solve \\(\\log_{2}x+\\log_{4}x+\\log_{16}x=7\\) for \\(x>0\\).',
+  opts:['\\(8\\)','\\(16\\)','\\(32\\)','\\(64\\)','\\(128\\)'], correct:1,
+  sol:'\\(\\log_2 x\\left(1+\\tfrac12+\\tfrac14\\right)=7\\Rightarrow \\tfrac74\\log_2 x=7\\Rightarrow\\log_2 x=4\\Rightarrow x=16\\).' },
+{ n:3, stem:'Evaluate \\(\\displaystyle\\sum_{k=0}^{\\infty}\\dfrac{2^{k}}{3^{\\,k+1}}\\).',
+  opts:['\\(\\tfrac13\\)','\\(\\tfrac23\\)','\\(1\\)','\\(\\tfrac32\\)','\\(2\\)'], correct:2,
+  sol:'\\(\\tfrac13\\sum_{k\\ge0}\\left(\\tfrac23\\right)^{k}=\\tfrac13\\cdot\\dfrac{1}{1-2/3}=\\tfrac13\\cdot3=1\\).' },
+{ n:4, stem:'Find the value of \\(\\dfrac{d}{dx}\\left(x^{x}\\right)\\) at \\(x=1\\).',
+  opts:['\\(0\\)','\\(1\\)','\\(e\\)','\\(2\\)','\\(\\tfrac1e\\)'], correct:1,
+  sol:'\\(x^{x}=e^{x\\ln x}\\), so \\(\\dfrac{d}{dx}x^{x}=x^{x}(\\ln x+1)\\); at \\(x=1\\) this is \\(1\\cdot(0+1)=1\\).' },
+{ n:5, stem:'Evaluate \\(\\displaystyle\\int_{-2}^{2}\\left(x^{3}\\cos x+x^{2}\\right)dx\\).',
+  opts:['\\(0\\)','\\(\\tfrac83\\)','\\(\\tfrac{16}{3}\\)','\\(\\tfrac{32}{3}\\)','\\(4\\)'], correct:2,
+  sol:'\\(x^{3}\\cos x\\) is odd, so its integral is \\(0\\); \\(\\int_{-2}^{2}x^{2}\\,dx=2\\cdot\\tfrac83=\\tfrac{16}{3}\\).' },
+{ n:6, stem:'Find the maximum value of \\(\\sin x+\\sin\\!\\left(x+\\dfrac{\\pi}{3}\\right)\\).',
+  opts:['\\(1\\)','\\(\\sqrt2\\)','\\(\\sqrt3\\)','\\(\\tfrac32\\)','\\(2\\)'], correct:2,
+  sol:'\\(\\sin x+\\sin\\!\\left(x+\\tfrac{\\pi}{3}\\right)=2\\cos\\tfrac{\\pi}{6}\\,\\sin\\!\\left(x+\\tfrac{\\pi}{6}\\right)=\\sqrt3\\,\\sin\\!\\left(x+\\tfrac{\\pi}{6}\\right)\\), with maximum \\(\\sqrt3\\).' },
+{ n:7, stem:'Find the shortest distance between the parallel lines \\(y=2x+1\\) and \\(y=2x+6\\).',
+  opts:['\\(1\\)','\\(\\sqrt5\\)','\\(\\tfrac52\\)','\\(2\\sqrt5\\)','\\(5\\)'], correct:1,
+  sol:'Distance \\(=\\dfrac{|6-1|}{\\sqrt{1^{2}+2^{2}}}=\\dfrac{5}{\\sqrt5}=\\sqrt5\\).' },
+{ n:8, stem:'How many distinct monomials appear in the expansion of \\((x+y+z)^{10}\\)?',
+  opts:['\\(11\\)','\\(55\\)','\\(66\\)','\\(100\\)','\\(121\\)'], correct:2,
+  sol:'The monomials \\(x^{a}y^{b}z^{c}\\) with \\(a+b+c=10\\) number \\(\\binom{10+2}{2}=\\binom{12}{2}=66\\).' },
+{ n:9, stem:'The sequence defined by \\(a_{1}=\\sqrt2\\) and \\(a_{n+1}=\\sqrt{2+a_{n}}\\) converges. Find its limit.',
+  opts:['\\(1\\)','\\(\\sqrt2\\)','\\(\\sqrt3\\)','\\(2\\)','\\(1+\\sqrt2\\)'], correct:3,
+  sol:'The limit \\(L\\) satisfies \\(L=\\sqrt{2+L}\\Rightarrow L^{2}-L-2=0\\Rightarrow L=2\\) (the positive root).' },
+{ n:10, stem:'Evaluate \\(\\displaystyle\\int_{0}^{\\pi}x\\sin x\\,dx\\).',
+  opts:['\\(\\tfrac{\\pi}{2}\\)','\\(\\pi-1\\)','\\(\\pi\\)','\\(2\\)','\\(2\\pi\\)'], correct:2,
+  sol:'Integrating by parts: \\(\\int_0^{\\pi}x\\sin x\\,dx=\\big[-x\\cos x+\\sin x\\big]_0^{\\pi}=\\pi\\).' },
+{ n:11, stem:'How many digits does \\(2^{100}\\) have when written in base 10? (Take \\(\\log_{10}2\\approx0.30103\\).)',
+  opts:['\\(30\\)','\\(31\\)','\\(32\\)','\\(50\\)','\\(100\\)'], correct:1,
+  sol:'Number of digits \\(=\\lfloor100\\log_{10}2\\rfloor+1=\\lfloor30.103\\rfloor+1=31\\).' },
+{ n:12, stem:'How many solutions does \\(\\sin x+\\cos x=1\\) have in \\(0\\le x<2\\pi\\)?',
+  opts:['\\(0\\)','\\(1\\)','\\(2\\)','\\(3\\)','\\(4\\)'], correct:2,
+  sol:'\\(\\sqrt2\\,\\sin\\!\\left(x+\\tfrac{\\pi}{4}\\right)=1\\Rightarrow\\sin\\!\\left(x+\\tfrac{\\pi}{4}\\right)=\\tfrac{1}{\\sqrt2}\\), giving \\(x=0\\) and \\(x=\\tfrac{\\pi}{2}\\). Two solutions.' },
+{ n:13, stem:'The polynomial \\(x^{3}+ax+b\\) is divisible by \\((x-1)^{2}\\). Find \\(a+b\\).',
+  opts:['\\(-3\\)','\\(-1\\)','\\(0\\)','\\(1\\)','\\(2\\)'], correct:1,
+  sol:'\\((x-1)^{2}\\mid p\\) requires \\(p(1)=0\\) and \\(p^{\\prime}(1)=0\\). \\(p^{\\prime}(x)=3x^{2}+a\\Rightarrow a=-3\\); then \\(p(1)=1+a+b=0\\Rightarrow b=2\\). So \\(a+b=-1\\).' },
+{ n:14, stem:'A fair die is rolled repeatedly until a 6 first appears. What is the probability that this happens on an even-numbered roll?',
+  opts:['\\(\\tfrac16\\)','\\(\\tfrac{5}{11}\\)','\\(\\tfrac12\\)','\\(\\tfrac{6}{11}\\)','\\(\\tfrac56\\)'], correct:1,
+  sol:'\\(P=\\sum_{k\\ge1}\\left(\\tfrac56\\right)^{2k-1}\\tfrac16=\\dfrac{(5/6)(1/6)}{1-(5/6)^{2}}=\\dfrac{5/36}{11/36}=\\tfrac{5}{11}\\).' },
+{ n:15, stem:'Evaluate \\(\\displaystyle\\sum_{n=1}^{\\infty}\\dfrac{n}{(n+1)!}\\).',
+  opts:['\\(\\tfrac12\\)','\\(1\\)','\\(e-1\\)','\\(e\\)','\\(2\\)'], correct:1,
+  sol:'\\(\\dfrac{n}{(n+1)!}=\\dfrac{1}{n!}-\\dfrac{1}{(n+1)!}\\), which telescopes to \\(\\dfrac{1}{1!}=1\\).' },
+{ n:16, stem:'Find the area bounded by \\(y=\\dfrac1x\\), the \\(x\\)-axis, and the lines \\(x=1\\) and \\(x=e\\).',
+  opts:['\\(\\tfrac1e\\)','\\(1\\)','\\(e-1\\)','\\(e\\)','\\(2\\)'], correct:1,
+  sol:'\\(\\int_1^{e}\\dfrac1x\\,dx=\\ln e-\\ln1=1\\).' },
+{ n:17, stem:'The cubic \\(x^{3}-6x^{2}+11x-6=0\\) has three real roots. Find the sum of the cubes of the roots.',
+  opts:['\\(6\\)','\\(36\\)','\\(44\\)','\\(72\\)','\\(90\\)'], correct:1,
+  sol:'With \\(e_1=6,\\ e_2=11,\\ e_3=6\\): \\(\\sum r^{3}=e_1^{3}-3e_1e_2+3e_3=216-198+18=36\\). (The roots are \\(1,2,3\\).)' },
+{ n:18, stem:'A cube has a space diagonal of length \\(6\\). Find its total surface area.',
+  opts:['\\(24\\)','\\(36\\)','\\(48\\)','\\(72\\)','\\(72\\sqrt3\\)'], correct:3,
+  sol:'The side \\(s\\) satisfies \\(s\\sqrt3=6\\Rightarrow s=2\\sqrt3\\), so the surface area is \\(6s^{2}=6\\cdot12=72\\).' },
+{ n:19, stem:'What is the largest integer \\(n\\) for which \\(n!<10^{6}\\)?',
+  opts:['\\(7\\)','\\(8\\)','\\(9\\)','\\(10\\)','\\(11\\)'], correct:2,
+  sol:'\\(9!=362880<10^{6}\\) but \\(10!=3628800>10^{6}\\), so \\(n=9\\).' },
+{ n:20, stem:'Find the last two digits of \\(3^{2024}\\).',
+  opts:['\\(01\\)','\\(03\\)','\\(27\\)','\\(43\\)','\\(81\\)'], correct:4,
+  sol:'\\(3^{20}\\equiv1\\pmod{100}\\) and \\(2024\\equiv4\\pmod{20}\\), so \\(3^{2024}\\equiv3^{4}=81\\pmod{100}\\).' }
+];
+const P2A = [
+{ n:1,
+  stem:'Let \\(x\\) be a real number. Which of the following is a <b>sufficient but not necessary</b> condition for \\(2x^{2}-5x+2 \\le 0\\)?',
+  opts:['\\(\\tfrac{1}{2} \\le x \\le 2\\)','\\(1 \\le x \\le 2\\)','\\(x \\le 2\\)','\\(\\tfrac{1}{2} < x < 3\\)','\\(x \\ge \\tfrac{1}{2}\\)'],
+  correct:1,
+  sol:'\\(2x^{2}-5x+2=(2x-1)(x-2)\\le 0 \\iff \\tfrac12 \\le x \\le 2\\). A <i>sufficient</i> condition forces \\(x\\in[\\tfrac12,2]\\) (a subset); <i>not necessary</i> means a proper subset. Only \\([1,2]\\) qualifies. \\([\\tfrac12,2]\\) is necessary-and-sufficient; \\(x\\le2\\) and \\(x\\ge\\tfrac12\\) are supersets (necessary, not sufficient); \\(\\tfrac12<x<3\\) is neither.' },
+{ n:2,
+  stem:'For real numbers \\(a\\) and \\(b\\), let \\(P:\\ a^{2}+b^{2}<1\\) and \\(Q:\\ |a|+|b|<1\\). Which one correctly describes the relationship between \\(P\\) and \\(Q\\)?',
+  opts:['\\(P\\) is sufficient but not necessary for \\(Q\\).','\\(P\\) is necessary but not sufficient for \\(Q\\).','\\(P\\) is both necessary and sufficient for \\(Q\\).','\\(P\\) is neither necessary nor sufficient for \\(Q\\).'],
+  correct:1,
+  sol:'If \\(|a|+|b|<1\\) then \\(a^{2}+b^{2}\\le(|a|+|b|)^{2}<1\\), so \\(Q\\Rightarrow P\\): \\(P\\) is <i>necessary</i> for \\(Q\\). The converse fails: \\(a=b=0.7\\) gives \\(a^{2}+b^{2}=0.98<1\\) but \\(|a|+|b|=1.4\\), so \\(P\\not\\Rightarrow Q\\) and \\(P\\) is not sufficient.' },
+{ n:3,
+  stem:'A function \\(f:\\mathbb{R}\\to\\mathbb{R}\\) satisfies \\(f(x+y)=f(x)+f(y)\\) for all real \\(x,y\\).<ul class="roman"><li><b>I.</b> \\(f(0)=0\\).</li><li><b>II.</b> \\(f\\) is an odd function.</li><li><b>III.</b> \\(f\\) is strictly increasing.</li></ul>Which of these <i>must</i> be true?',
+  opts:['I only','I and II only','I and III only','II and III only','I, II and III'],
+  correct:1,
+  sol:'Put \\(x=y=0\\): \\(f(0)=2f(0)\\Rightarrow f(0)=0\\) (I). Then \\(f(x)+f(-x)=f(0)=0\\Rightarrow f(-x)=-f(x)\\) (II). III fails: \\(f\\equiv0\\) satisfies the equation but is not strictly increasing.' },
+{ n:4,
+  stem:'Let \\(P\\) and \\(Q\\) be statements. Which one is logically equivalent to the <b>negation</b> of "if \\(P\\) then \\(Q\\)"?',
+  opts:['if \\(Q\\) then \\(P\\)','\\(P\\) and (not \\(Q\\))','(not \\(P\\)) or \\(Q\\)','if (not \\(P\\)) then (not \\(Q\\))','\\(P\\) or (not \\(Q\\))'],
+  correct:1,
+  sol:'\\(\\lnot(P\\Rightarrow Q)\\equiv\\lnot(\\lnot P\\lor Q)\\equiv P\\land\\lnot Q\\). Option A is the converse, C is the original implication, D is the inverse.' },
+{ n:5,
+  stem:'A student argues:<div class="block"><i>"For any real \\(x\\), \\(x<x+1\\). Squaring, \\(x^{2}<(x+1)^{2}=x^{2}+2x+1\\), so \\(0<2x+1\\), hence \\(x>-\\tfrac12\\). Therefore every real number exceeds \\(-\\tfrac12\\)."</i></div>At which step does the argument <i>first</i> become invalid?',
+  opts:['The claim \\(x<x+1\\).','Squaring to get \\(x^{2}<(x+1)^{2}\\).','Rearranging to \\(0<2x+1\\).','Concluding \\(x>-\\tfrac12\\).','The argument is valid.'],
+  correct:1,
+  sol:'\\(t\\mapsto t^{2}\\) is increasing only on \\([0,\\infty)\\). From \\(x<x+1\\) one may conclude \\(x^{2}<(x+1)^{2}\\) only when \\(x\\ge-\\tfrac12\\); assuming it for all \\(x\\) is the first invalid step (the chain is a disguised restatement of \\(x>-\\tfrac12\\)).' },
+{ n:6,
+  stem:'All variables range over the real numbers. Which one of the following statements is <b>true</b>?',
+  opts:['\\(\\forall x\\,\\exists y\\ (y^{2}=x)\\)','\\(\\exists y\\,\\forall x\\ (x+y=x)\\)','\\(\\forall x\\,\\exists y\\ (xy=1)\\)','\\(\\exists x\\,\\forall y\\ (x\\le y)\\)','\\(\\forall x\\,\\forall y\\ (xy\\ge 0)\\)'],
+  correct:1,
+  sol:'\\(y=0\\) gives \\(x+y=x\\) for every \\(x\\), so B is true. A fails for \\(x<0\\); C fails at \\(x=0\\); D asserts a least real, which does not exist; E fails at \\(x=1,y=-1\\).' },
+{ n:7,
+  stem:'The equation \\(x^{2}-2px+(p+2)=0\\) (with \\(p\\) real) has two real roots, both positive (a repeated positive root counts as two). The complete set of such \\(p\\) is:',
+  opts:['\\(p\\ge 2\\)','\\(p>2\\)','\\(p\\le -1\\) or \\(p\\ge 2\\)','\\(-2<p\\le -1\\)','\\(p>0\\)'],
+  correct:0,
+  sol:'Discriminant \\(\\ge0\\): \\((p-2)(p+1)\\ge0\\Rightarrow p\\le-1\\) or \\(p\\ge2\\). Sum \\(=2p>0\\Rightarrow p>0\\); product \\(=p+2>0\\Rightarrow p>-2\\). Intersection: \\(p\\ge2\\). At \\(p=2\\) the repeated root is \\(2>0\\), so the boundary is included.' },
+{ n:8,
+  stem:'Let \\(n\\) be a positive integer with \\(12\\mid n^{2}\\).<ul class="roman"><li><b>I.</b> \\(6\\mid n\\).</li><li><b>II.</b> \\(12\\mid n\\).</li><li><b>III.</b> \\(36\\mid n^{2}\\).</li></ul>Which <i>must</i> be true?',
+  opts:['I only','I and III only','II and III only','I, II and III','III only'],
+  correct:1,
+  sol:'\\(12=2^{2}\\cdot3\\). From \\(12\\mid n^{2}\\): \\(v_2(n)\\ge1\\) and \\(v_3(n)\\ge1\\), so \\(6\\mid n\\) (I), hence \\(36\\mid n^{2}\\) (III). II is false: \\(n=6\\) has \\(12\\mid36\\) but \\(12\\nmid6\\).' },
+{ n:9,
+  stem:'Let \\(c\\) be real. \\(P:\\) the line \\(y=x+c\\) is tangent to \\(y=x^{2}\\);  \\(Q:\\ c=-\\tfrac14\\). Which is correct?',
+  opts:['\\(P\\Rightarrow Q\\), but \\(Q\\not\\Rightarrow P\\).','\\(Q\\Rightarrow P\\), but \\(P\\not\\Rightarrow Q\\).','\\(P\\) and \\(Q\\) are equivalent.','Neither implies the other.'],
+  correct:2,
+  sol:'\\(x^{2}=x+c\\Rightarrow x^{2}-x-c=0\\); tangency \\(\\iff\\) discriminant \\(1+4c=0\\iff c=-\\tfrac14\\). The implication runs both ways, so \\(P\\iff Q\\).' },
+{ n:10,
+  stem:'For which one is the implication true for <i>all</i> real \\(x,y\\)?',
+  opts:['If \\(x^{2}=y^{2}\\) then \\(x=y\\).','If \\(x^{3}=y^{3}\\) then \\(x=y\\).','If \\(x>y\\) then \\(x^{2}>y^{2}\\).','If \\(xy>0\\) then \\(x>0\\).','If \\(|x|=|y|\\) then \\(x=y\\).'],
+  correct:1,
+  sol:'Cubing is strictly increasing on \\(\\mathbb{R}\\), hence injective: \\(x^{3}=y^{3}\\Rightarrow x=y\\). A and E fail at \\(x=1,y=-1\\); C fails at \\(x=1,y=-2\\); D fails at \\(x=y=-1\\).' },
+{ n:11,
+  stem:'A sequence of positive reals \\((a_n)\\) satisfies \\(a_{n+1}^{2}=a_n a_{n+2}\\) for all \\(n\\ge1\\).<ul class="roman"><li><b>I.</b> \\((a_n)\\) is geometric.</li><li><b>II.</b> \\((\\log a_n)\\) is arithmetic.</li><li><b>III.</b> \\((a_n)\\) is convergent.</li></ul>Which <i>must</i> be true?',
+  opts:['I only','I and II only','II only','I, II and III'],
+  correct:1,
+  sol:'\\(a_{n+1}^{2}=a_n a_{n+2}\\Rightarrow \\dfrac{a_{n+2}}{a_{n+1}}=\\dfrac{a_{n+1}}{a_n}\\), a constant ratio, so \\((a_n)\\) is geometric (I) and \\(\\log a_n\\) is arithmetic (II). III fails: ratio \\(>1\\) diverges.' },
+{ n:12,
+  stem:'For real \\(a,b\\), the equation \\(|a+b|=|a|+|b|\\) holds if and only if:',
+  opts:['\\(a>0\\) and \\(b>0\\)','\\(ab>0\\)','\\(ab\\ge 0\\)','\\(a=b\\)','\\(|a|=|b|\\)'],
+  correct:2,
+  sol:'\\(|a+b|=|a|+|b|\\iff(a+b)^{2}=(|a|+|b|)^{2}\\iff ab=|ab|\\iff ab\\ge0\\). The case \\(ab=0\\) is included, so it is \\(ab\\ge0\\), not the strict \\(ab>0\\).' },
+{ n:13,
+  stem:'It is known that (1) if \\(P\\) then \\(Q\\); and (2) if (not \\(R\\)) then (not \\(Q\\)). Given also that \\(P\\) is true, which must be true?',
+  opts:['\\(R\\) is true.','\\(R\\) is false.','\\(Q\\) is false.','Nothing about \\(R\\) can be determined.'],
+  correct:0,
+  sol:'From \\(P\\) and (1), \\(Q\\) holds. Statement (2) is \\(\\lnot R\\Rightarrow\\lnot Q\\), whose contrapositive is \\(Q\\Rightarrow R\\). Hence \\(R\\) is true.' },
+{ n:14,
+  stem:'The equation \\(x^{3}-3x=k\\) (with \\(k\\) real) has three <i>distinct</i> real roots if and only if:',
+  opts:['\\(-2<k<2\\)','\\(-2\\le k\\le 2\\)','\\(k>2\\) or \\(k<-2\\)','\\(-1<k<1\\)','\\(k=0\\)'],
+  correct:0,
+  sol:'\\(g(x)=x^{3}-3x\\) has local max \\(g(-1)=2\\) and local min \\(g(1)=-2\\). \\(y=k\\) meets the graph three times exactly when \\(-2<k<2\\). At \\(k=\\pm2\\) a root repeats, leaving two distinct.' },
+{ n:15,
+  stem:'Define \\(f(x)=|x-1|+|x-3|+|x-5|\\). Which one of the following is <b>false</b>?',
+  opts:['\\(f\\) is symmetric about \\(x=3\\).','The minimum value of \\(f\\) is \\(4\\).','\\(f\\) is differentiable everywhere.','\\(f(x)\\to\\infty\\) as \\(x\\to\\pm\\infty\\).'],
+  correct:2,
+  sol:'\\(f\\) is piecewise linear with corners at \\(x=1,3,5\\), so it is not differentiable there — C is false. The rest hold: symmetric about the median \\(x=3\\); minimum \\(f(3)=2+0+2=4\\); and \\(f\\sim3|x|\\to\\infty\\).' },
+{ n:16,
+  stem:'Let \\(S=\\left\\{\\tfrac1n:n\\in\\mathbb{Z}^{+}\\right\\}=\\{1,\\tfrac12,\\tfrac13,\\dots\\}\\). Which is true?',
+  opts:['\\(S\\) has both a maximum and a minimum.','\\(S\\) has a maximum but no minimum.','\\(S\\) has a minimum but no maximum.','\\(S\\) has neither a maximum nor a minimum.'],
+  correct:1,
+  sol:'\\(\\max S=1\\) (attained at \\(n=1\\)). \\(\\inf S=0\\) but \\(0\\notin S\\) and no smallest \\(\\tfrac1n\\) exists, so there is no minimum.' },
+{ n:17,
+  stem:'For every real \\(x\\), exactly one of the three statements below is <i>false</i>. Which one?<ul class="roman"><li><b>I.</b> \\(|x|\\ge x\\).</li><li><b>II.</b> \\(x^{2}\\ge x\\).</li><li><b>III.</b> \\(|x|^{2}=x^{2}\\).</li></ul>',
+  opts:['I','II','III','None of them is false.','More than one is false.'],
+  correct:1,
+  sol:'I and III hold for every real \\(x\\). II fails on \\(0<x<1\\) (e.g. \\(x=\\tfrac12\\): \\(\\tfrac14<\\tfrac12\\)). So exactly II is false.' },
+{ n:18,
+  stem:'Let \\(n\\) be an integer with \\(n\\ge2\\), and consider \\(P:\\ n\\) is prime; \\(Q:\\ n\\mid(2^{n}-2)\\). Which is correct?',
+  opts:['\\(P\\) is necessary and sufficient for \\(Q\\).','\\(P\\) is sufficient but not necessary for \\(Q\\).','\\(P\\) is necessary but not sufficient for \\(Q\\).','\\(P\\) is neither necessary nor sufficient for \\(Q\\).'],
+  correct:1,
+  sol:'By Fermat, prime \\(n\\Rightarrow n\\mid2^{n}-2\\), so \\(P\\Rightarrow Q\\) (sufficient). The converse fails: \\(n=341=11\\cdot31\\) is a base-2 pseudoprime, \\(341\\mid2^{341}-2\\) though composite. So \\(P\\) is not necessary.' },
+{ n:19,
+  stem:'Let \\(f(x)=x^{3}+ax^{2}+bx+c\\) with \\(a,b,c\\) real constants. The condition for \\(f\\) to be an <b>odd</b> function is:',
+  opts:['\\(a=0\\)','\\(c=0\\)','\\(a=0\\) and \\(c=0\\)','\\(a=0,\\ b=0\\) and \\(c=0\\)','\\(a=c=0\\) and \\(b\\ne0\\)'],
+  correct:2,
+  sol:'\\(f(-x)+f(x)=2ax^{2}+2c\\). For \\(f\\) odd this vanishes for all \\(x\\), giving \\(a=0\\) and \\(c=0\\); \\(b\\) is free (e.g. \\(x^{3}+bx\\) is odd for every \\(b\\)). D over-constrains; E wrongly excludes \\(b=0\\).' },
+{ n:20,
+  stem:'For real \\(x,y\\), how many of the following are true for <i>all</i> \\(x,y\\) (for those with division, wherever both sides are defined)?<ul class="roman"><li>(1) \\(x>y\\Rightarrow x^{3}>y^{3}\\)</li><li>(2) \\(x^{2}>y^{2}\\Rightarrow|x|>|y|\\)</li><li>(3) \\(x>y\\Rightarrow2^{x}>2^{y}\\)</li><li>(4) \\(x>y>0\\Rightarrow\\tfrac1x<\\tfrac1y\\)</li><li>(5) \\(x>y\\Rightarrow x^{2}>y^{2}\\)</li></ul>',
+  opts:['1','2','3','4','5'],
+  correct:3,
+  sol:'(1) true (cubing increasing); (2) true, since \\(x^{2}>y^{2}\\iff|x|>|y|\\); (3) true (exponential increasing); (4) true for \\(x>y>0\\); (5) false — take \\(x=1,y=-2\\): \\(1<4\\). Four hold.' }
+];
+const P2B = [
+{ n:1, stem:'For a real number \\(x\\), the condition \u201c\\(x>1\\)\u201d is which kind of condition for \u201c\\(\\dfrac1x<1\\)\u201d?',
+  opts:['Sufficient but not necessary','Necessary but not sufficient','Necessary and sufficient','Neither necessary nor sufficient'], correct:0,
+  sol:'\\(\\dfrac1x<1\\iff x>1\\ \\text{or}\\ x<0\\). So \\(x>1\\Rightarrow\\dfrac1x<1\\) (sufficient), but \\(x<0\\) also works, so it is not necessary.' },
+{ n:2, stem:'Which one of the following statements is <b>true</b>?<ul class="roman"><li><b>I.</b> The sum of any two irrational numbers is irrational.</li><li><b>II.</b> The product of any two irrational numbers is irrational.</li><li><b>III.</b> There exist irrational numbers \\(a,b\\) with \\(a^{b}\\) rational.</li></ul>',
+  opts:['I only','II only','III only','I and III only','None of them'], correct:2,
+  sol:'I fails: \\(\\sqrt2+(-\\sqrt2)=0\\). II fails: \\(\\sqrt2\\cdot\\sqrt2=2\\). III holds: if \\(\\sqrt2^{\\sqrt2}\\) is rational we are done; otherwise \\(\\left(\\sqrt2^{\\sqrt2}\\right)^{\\sqrt2}=2\\).' },
+{ n:3, stem:'A student argues:<div class="block"><i>\u201cLet \\(a=b\\). Then \\(a^{2}=ab\\), so \\(a^{2}-b^{2}=ab-b^{2}\\), giving \\((a+b)(a-b)=b(a-b)\\). Cancelling \\((a-b)\\) gives \\(a+b=b\\), so \\(2b=b\\), hence \\(2=1\\).\u201d</i></div>At which step does the argument first become invalid?',
+  opts:['Writing \\(a^{2}=ab\\).','Writing \\((a+b)(a-b)=b(a-b)\\).','Cancelling the factor \\((a-b)\\).','Concluding \\(2b=b\\).','The argument is valid.'], correct:2,
+  sol:'Since \\(a=b\\), \\(a-b=0\\); cancelling \\((a-b)\\) divides both sides by zero. That step is the first invalid one.' },
+{ n:4, stem:'The statement \u201cevery student who studied passed the exam\u201d is <b>false</b>. Which of the following must be true?',
+  opts:['No student studied.','Some student studied but did not pass.','Every student failed.','Some student who did not study passed.'], correct:1,
+  sol:'The negation of \u201cfor all studying students, they passed\u201d is \u201cthere exists a studying student who did not pass\u201d.' },
+{ n:5, stem:'For integers \\(a\\) and \\(b\\), the condition \u201c\\(a\\) and \\(b\\) are both even\u201d is which kind of condition for \u201c\\(a+b\\) is even\u201d?',
+  opts:['Sufficient but not necessary','Necessary but not sufficient','Necessary and sufficient','Neither necessary nor sufficient'], correct:0,
+  sol:'Both even \\(\\Rightarrow a+b\\) even (sufficient). But \\(a+b\\) is also even when both are odd, so it is not necessary.' },
+{ n:6, stem:'A function \\(f:\\mathbb{R}\\to\\mathbb{R}\\) satisfies \\(f(f(x))=x\\) for all real \\(x\\).<ul class="roman"><li><b>I.</b> \\(f\\) is injective.</li><li><b>II.</b> \\(f\\) is surjective.</li><li><b>III.</b> \\(f\\) is strictly monotonic.</li></ul>Which <i>must</i> be true?',
+  opts:['I only','I and II only','III only','I, II and III'], correct:1,
+  sol:'\\(f(f(x))=x\\) makes \\(f\\) its own inverse, hence a bijection (I and II). III fails: swapping \\(0\\leftrightarrow1\\) and fixing every other point is an involution that is not monotonic.' },
+{ n:7, stem:'For real constants \\(a\\ne0\\), \\(b\\), \\(c\\), a necessary and sufficient condition for \\(ax^{2}+bx+c=0\\) to have two real roots of opposite sign is:',
+  opts:['\\(c<0\\)','\\(ac<0\\)','\\(b^{2}-4ac>0\\)','\\(a>0\\) and \\(c<0\\)','\\(ac>0\\)'], correct:1,
+  sol:'Opposite-sign roots require the product \\(c/a<0\\), i.e. \\(ac<0\\); and \\(ac<0\\) forces \\(b^{2}-4ac>0\\) automatically. So \\(ac<0\\) is exactly the condition. (C is necessary but not sufficient; D is sufficient but not necessary.)' },
+{ n:8, stem:'It is known that exactly one of the statements \\(P,Q\\) is true, and that \\(P\\Rightarrow Q\\). Which of the following must hold?',
+  opts:['\\(P\\) is true and \\(Q\\) is false.','\\(P\\) is false and \\(Q\\) is true.','Both are false.','It cannot be determined.'], correct:1,
+  sol:'If \\(P\\) were true then \\(Q\\) would be true too, contradicting \u201cexactly one\u201d. So \\(P\\) is false, and then the single true statement must be \\(Q\\).' },
+{ n:9, stem:'A necessary and sufficient condition for the system \\(x+y=1,\\ x^{2}+y^{2}=k\\) to have real solutions is:',
+  opts:['\\(k\\ge\\tfrac14\\)','\\(k\\ge\\tfrac12\\)','\\(k>0\\)','\\(k\\ge1\\)','\\(k\\le\\tfrac12\\)'], correct:1,
+  sol:'Substituting \\(y=1-x\\) gives \\(2x^{2}-2x+(1-k)=0\\), with discriminant \\(8k-4\\ge0\\iff k\\ge\\tfrac12\\). (Geometrically \\(x^{2}+y^{2}\\) is minimised at \\(x=y=\\tfrac12\\), value \\(\\tfrac12\\).)' },
+{ n:10, stem:'For positive integers, which one of the following statements is <b>false</b>?<ul class="roman"><li><b>I.</b> If \\(a\\mid b\\) and \\(a\\mid c\\) then \\(a\\mid(b+c)\\).</li><li><b>II.</b> If \\(a\\mid bc\\) then \\(a\\mid b\\) or \\(a\\mid c\\).</li><li><b>III.</b> If \\(a\\mid b\\) and \\(b\\mid a\\) then \\(a=b\\).</li></ul>',
+  opts:['I','II','III','None is false','More than one is false'], correct:1,
+  sol:'I and III are standard truths. II fails: \\(4\\mid 2\\cdot2\\) but \\(4\\nmid2\\). So exactly II is false.' },
+{ n:11, stem:'A sequence \\((a_n)\\) of real numbers is given. The condition \u201c\\((a_n)\\) is arithmetic\u201d is which kind of condition for \u201c\\((2^{a_n})\\) is geometric\u201d?',
+  opts:['Sufficient but not necessary','Necessary but not sufficient','Necessary and sufficient','Neither necessary nor sufficient'], correct:2,
+  sol:'If \\((a_n)\\) is arithmetic then \\(2^{a_n}=2^{a_1}(2^{d})^{\\,n-1}\\) is geometric. Conversely \\(2^{a_n}=A r^{n}\\ (r>0)\\Rightarrow a_n=\\log_2 A+n\\log_2 r\\) is arithmetic. Equivalent.' },
+{ n:12, stem:'For a real number \\(x\\), the condition \u201c\\(|x-2|<3\\)\u201d is which kind of condition for \u201c\\(x<5\\)\u201d?',
+  opts:['Sufficient but not necessary','Necessary but not sufficient','Necessary and sufficient','Neither necessary nor sufficient'], correct:0,
+  sol:'\\(|x-2|<3\\iff-1<x<5\\Rightarrow x<5\\) (sufficient). But \\(x<5\\) includes e.g. \\(x=-10\\), where \\(|x-2|=12\\), so it is not necessary.' },
+{ n:13, stem:'Given the premises: (1) \\(P\\Rightarrow Q\\); (2) \\(Q\\Rightarrow R\\); (3) \\(R\\) is false. What can be concluded about \\(P\\)?',
+  opts:['\\(P\\) is true.','\\(P\\) is false.','\\(P\\) may be either.','\\(Q\\) is true.'], correct:1,
+  sol:'\\(\\lnot R\\) with \\(Q\\Rightarrow R\\) gives \\(\\lnot Q\\); then \\(P\\Rightarrow Q\\) gives \\(\\lnot P\\). So \\(P\\) is false.' },
+{ n:14, stem:'Let \\(f(x)=|x-a|+|x+a|\\) for a real constant \\(a\\). Which one of the following is <b>false</b>?',
+  opts:['\\(f\\) is an even function.','The minimum value of \\(f\\) is \\(2|a|\\).','\\(f\\) is differentiable for all real \\(x\\).','\\(f(x)\\to\\infty\\) as \\(x\\to\\pm\\infty\\).'], correct:2,
+  sol:'\\(f\\) has corners at \\(x=\\pm a\\) (or at \\(0\\) when \\(a=0\\)), so it is not differentiable everywhere \u2014 C is false. The others hold: \\(f\\) is even, its minimum is \\(2|a|\\), and it grows without bound.' },
+{ n:15, stem:'Let \\(g(x)=\\dfrac{x}{1+x^{2}}\\) for real \\(x\\). Which of the following is true?',
+  opts:['\\(g\\) has a maximum but no minimum.','\\(g\\) has a minimum but no maximum.','\\(g\\) has both a maximum and a minimum.','\\(g\\) has neither.'], correct:2,
+  sol:'\\(g^{\\prime}(x)=\\dfrac{1-x^{2}}{(1+x^{2})^{2}}\\) vanishes at \\(x=\\pm1\\), giving \\(g(1)=\\tfrac12\\) (maximum) and \\(g(-1)=-\\tfrac12\\) (minimum), both attained.' },
+{ n:16, stem:'For every real \\(x\\), exactly one of the following is <b>false</b>. Which one?<ul class="roman"><li><b>I.</b> \\(e^{x}>0\\).</li><li><b>II.</b> \\(e^{x}\\ge 1+x\\).</li><li><b>III.</b> \\(e^{x}>x^{2}\\).</li></ul>',
+  opts:['I','II','III','None is false','More than one is false'], correct:2,
+  sol:'I holds always; II is the standard tangent-line bound (equality at \\(x=0\\)). III fails, e.g. at \\(x=-3\\): \\(e^{-3}\\approx0.05<9\\). So exactly III is false.' },
+{ n:17, stem:'A necessary and sufficient condition for the line \\(y=mx+1\\) to meet the circle \\(x^{2}+y^{2}=1\\) at exactly one point is:',
+  opts:['\\(m=0\\)','\\(|m|=1\\)','\\(m=\\pm1\\)','every real \\(m\\)','no real \\(m\\)'], correct:0,
+  sol:'Substituting gives \\((1+m^{2})x^{2}+2mx=0\\), so \\(x=0\\) or \\(x=\\dfrac{-2m}{1+m^{2}}\\). These coincide (a single point) iff \\(m=0\\). The line always passes through \\((0,1)\\), which lies on the circle.' },
+{ n:18, stem:'For a positive integer \\(n\\), the condition \u201c\\(n\\) is a perfect square\u201d is which kind of condition for \u201c\\(n\\) has an odd number of positive divisors\u201d?',
+  opts:['Sufficient but not necessary','Necessary but not sufficient','Necessary and sufficient','Neither necessary nor sufficient'], correct:2,
+  sol:'Divisors pair as \\(d\\leftrightarrow n/d\\); a divisor is unpaired only when \\(d=n/d\\), i.e. \\(n\\) is a perfect square. So the number of divisors is odd iff \\(n\\) is a perfect square \u2014 equivalent.' },
+{ n:19, stem:'Let \\(f(x)=\\sin x+a\\cos x+b\\,x\\), where \\(a,b\\) are real constants. A necessary and sufficient condition for \\(f\\) to be an odd function is:',
+  opts:['\\(a=0\\)','\\(b=0\\)','\\(a=0\\) and \\(b=0\\)','\\(a=0\\) and \\(b\\ne0\\)','\\(b=0\\) and \\(a\\ne0\\)'], correct:0,
+  sol:'\\(\\sin x\\) and \\(bx\\) are odd; \\(a\\cos x\\) is even. \\(f\\) is odd iff its even part \\(a\\cos x\\equiv0\\), i.e. \\(a=0\\) (with \\(b\\) free). C over-constrains; D wrongly excludes \\(b=0\\).' },
+{ n:20, stem:'For real numbers \\(x,y>0\\), how many of the following implications are true for <i>all</i> such \\(x,y\\)?<ul class="roman"><li>(1) \\(x>y\\Rightarrow x^{2}>y^{2}\\)</li><li>(2) \\(x>y\\Rightarrow\\sqrt{x}>\\sqrt{y}\\)</li><li>(3) \\(x>y\\Rightarrow\\dfrac1x<\\dfrac1y\\)</li><li>(4) \\(x>y\\Rightarrow\\dfrac{x}{x+1}>\\dfrac{y}{y+1}\\)</li><li>(5) \\(x>y\\Rightarrow\\ln x>\\ln y\\)</li></ul>',
+  opts:['1','2','3','4','5'], correct:4,
+  sol:'For \\(x,y>0\\), each of squaring, square root, reciprocal (which reverses), \\(t\\mapsto\\dfrac{t}{t+1}\\), and \\(\\ln\\) is strictly monotonic in the required direction. All five hold \u2014 the trap is expecting a false one.' }
+];
+const YOTTA = [
+{ n:1, stem:'Find the sum of the \\(x\\)-coordinates of the six points of intersection of \\(y=\\pi x(x-1)(x-2)(x-3)(x-4)(x-5)\\) and \\(y=\\dfrac{5}{17}x+\\dfrac{\\pi}{3}\\).',
+  opts:['\\(-15\\)','\\(-\\dfrac{44\\pi}{51}+1\\)','\\(-\\dfrac{7}{15}\\)','\\(0\\)','\\(\\dfrac{7}{15}\\)','\\(\\dfrac{44\\pi}{51}-1\\)','\\(12\\)','\\(15\\)'], correct:7,
+  sol:'The intersections satisfy a degree-6 polynomial \\(\\pi\\prod_{i=0}^{5}(x-i)-\\tfrac{5}{17}x-\\tfrac{\\pi}{3}=0\\). Only the \\(x^{6}\\) and \\(x^{5}\\) coefficients matter: they are \\(\\pi\\) and \\(-15\\pi\\) (the line changes lower-order terms only). Sum of roots \\(=15\\).' },
+{ n:2, stem:'A cubic function \\(f(x)\\) satisfies \\(f(2)=4,\\ f(3)=9,\\ f(-1)=1\\), and the coefficient of \\(x^{3}\\) is \\(2\\). Find \\(f(4)\\).',
+  opts:['\\(-16\\)','\\(6\\)','\\(16\\)','\\(32\\)','\\(36\\)','\\(46\\)'], correct:4,
+  sol:'Since \\(f(2)=2^{2},f(3)=3^{2},f(-1)=(-1)^{2}\\), the cubic \\(f(x)-x^{2}\\) has roots \\(2,3,-1\\) and leading coefficient \\(2\\): \\(f(x)=x^{2}+2(x-2)(x-3)(x+1)\\). Then \\(f(4)=16+2(2)(1)(5)=36\\).' },
+{ n:3, stem:'Let \\(f_0(x)=x\\) and \\(f_{n+1}(x)=|f_n(x)-k|\\) for a real number \\(k\\). Let \\(\\alpha,\\beta\\) be the least and greatest \\(x\\) with \\(f_n(x)=0\\). Find \\(\\displaystyle\\int_{\\alpha}^{\\beta}f_n(x)\\,dx\\) for \\(n>0\\).',
+  opts:['\\(nk^{2}\\)','\\(nk^{2}-k^{2}\\)','\\(kn^{2}\\)','\\(nk\\)','\\(k(n-1)^{2}\\)','\\(nk^{2}-1\\)'], correct:1,
+  sol:'\\(f_n\\) is a nonnegative triangle wave of slope \\(\\pm1\\); its zeros are \\((2-n)k,(4-n)k,\\dots,nk\\) \\((n\\) of them, spaced \\(2k)\\). Between consecutive zeros sits a triangle of base \\(2k\\) and height \\(k\\), area \\(k^{2}\\); there are \\(n-1\\) of them, so the integral is \\((n-1)k^{2}=nk^{2}-k^{2}\\).' },
+{ n:4, stem:'Non-zero integers \\(a,b,c\\) satisfy \\(abc+bc+ab+ac+a+b+c=104\\). What is \\(a^{2}+b^{2}+c^{2}+2(a+b+c)+1\\)?',
+  opts:['\\(35\\)','\\(54\\)','\\(56\\)','\\(81\\)','\\(104\\)','\\(105\\)'], correct:3,
+  sol:'Add \\(1\\): \\((a+1)(b+1)(c+1)=105=3\\cdot5\\cdot7\\). The target equals \\((a+1)^{2}+(b+1)^{2}+(c+1)^{2}-2\\). With \\(\\{a+1,b+1,c+1\\}=\\{3,5,7\\}\\): \\(9+25+49-2=81\\) (the only value among the options).' },
+{ n:5, stem:'Let \\(u_n=2u_{n-1}+7u_{n-2}\\) with \\(u_1=4,\\ u_2=12\\). What does \\(\\dfrac{u_k}{u_{k-1}}\\) tend towards as \\(k\\to\\infty\\)?',
+  opts:['\\(2\\)','\\(\\sqrt3\\)','\\(\\sqrt5+1\\)','\\(7\\)','\\(9\\)','\\(1+2\\sqrt2\\)','\\(-1+\\sqrt3\\)'], correct:5,
+  sol:'The characteristic equation \\(x^{2}-2x-7=0\\) gives \\(x=1\\pm2\\sqrt2\\). The ratio tends to the dominant root \\(1+2\\sqrt2\\) (\\(\\approx3.828\\)), whose magnitude exceeds \\(|1-2\\sqrt2|\\).' },
+{ n:6, stem:'A polynomial \\(f\\) is such that \\(f(x^{2}-12x+45)\\) has roots \\(x=-3\\) and \\(x=15\\), with minimum value \\(-20\\). Which row describes \\(f(9x^{2}-30x+34)\\)?',
+  opts:['Roots \\(x=-1,\\,5\\); min \\(-20\\)','Roots \\(x=-\\tfrac43,\\,\\tfrac{14}{3}\\); min \\(-20\\)','Roots \\(x=-\\tfrac23,\\,\\tfrac{16}{3}\\); min \\(-20\\)','Roots \\(x=-1,\\,42\\); min \\(-20\\)','Roots \\(x=-12,\\,5\\); min \\(-60\\)','Roots \\(x=-1,\\,42\\); min \\(-180\\)'], correct:1,
+  sol:'\\(x^{2}-12x+45=(x-6)^{2}+9\\) and \\(9x^{2}-30x+34=9\\left(x-\\tfrac53\\right)^{2}+9\\) both have range \\([9,\\infty)\\), so the minimum stays \\(-20\\). The single root of \\(f\\) in range is \\(90\\); solving \\(9\\left(x-\\tfrac53\\right)^{2}+9=90\\) gives \\(x=-\\tfrac43,\\tfrac{14}{3}\\).' },
+{ n:7, stem:'How many real solutions are there to \\(2\\left(27^{x}\\right)-3^{\\,2x+1}-4\\left(3^{\\,x+1}\\right)+5=0\\)?',
+  opts:['\\(0\\)','\\(1\\)','\\(2\\)','\\(3\\)','\\(4\\)','\\(5\\)','\\(6\\)'], correct:2,
+  sol:'With \\(t=3^{x}>0\\) the equation becomes \\(2t^{3}-3t^{2}-12t+5=0\\). Its three real roots are \\(\\approx-2.04,\\,0.39,\\,3.15\\); exactly two are positive, each giving one \\(x\\). So \\(2\\) solutions.' },
+{ n:8, stem:'The graph of \\(y=\\tan(\\cos(\\sin x))\\) has period \\(P\\) and maximum value \\(M\\). Which row is correct?',
+  opts:['\\(P=1,\\ M<1\\)','\\(P=1,\\ M>1\\)','\\(P=\\tfrac{\\pi}{2},\\ M<1\\)','\\(P=\\tfrac{\\pi}{2},\\ M>1\\)','\\(P=\\pi,\\ M<1\\)','\\(P=\\pi,\\ M>1\\)','\\(P=2\\pi,\\ M<1\\)','\\(P=2\\pi,\\ M>1\\)'], correct:5,
+  sol:'\\(\\cos(\\sin x)\\) has period \\(\\pi\\) (since \\(\\sin(x+\\pi)=-\\sin x\\) and \\(\\cos\\) is even), and so does the composite. The inner value lies in \\([\\cos1,1]\\subset(0,\\tfrac{\\pi}{2})\\), where \\(\\tan\\) increases, so \\(M=\\tan(1)\\approx1.557>1\\).' },
+{ n:9, stem:'How many real solutions are there to \\(\\ln(\\sin x)=\\ln\\!\\left(1-\\dfrac{4x}{7\\pi}\\right)\\)?',
+  opts:['\\(0\\)','\\(1\\)','\\(2\\)','\\(3\\)','\\(4\\)','\\(5\\)','\\(6\\)','infinitely many'], correct:2,
+  sol:'Need \\(\\sin x=1-\\tfrac{4x}{7\\pi}\\) with \\(\\sin x>0\\) and the line \\(>0\\) (i.e. \\(x<\\tfrac{7\\pi}{4}\\)). On \\((0,\\pi)\\) the line falls from \\(1\\) to \\(\\tfrac37\\) and crosses the sine arch twice; elsewhere the constraints exclude solutions. So \\(2\\).' },
+{ n:10, stem:'A fair coin is flipped repeatedly until 4 consecutive heads are obtained. Find the expected number of flips.',
+  opts:['\\(4\\)','\\(14\\)','\\(16\\)','\\(30\\)','\\(\\tfrac{196}{5}\\)','\\(\\tfrac{288}{7}\\)','\\(62\\)','\\(64\\)'], correct:3,
+  sol:'For \\(n\\) consecutive heads on a fair coin the expected number of flips is \\(2^{\\,n+1}-2\\). For \\(n=4\\) this is \\(2^{5}-2=30\\).' },
+{ n:11, stem:'Worker \\(n\\) can do a task alone in \\(2^{n}\\) days. Let \\(f(k)\\) be the time when workers \\(0\\) to \\(k\\) inclusive work together (rates add). Find \\(f^{-1}\\!\\left(\\dfrac{255}{512}\\right)\\).',
+  opts:['\\(8\\)','\\(9\\)','\\(16\\)','\\(17\\)','\\(64\\)','\\(65\\)','Does not exist'], correct:6,
+  sol:'Combined rate \\(=\\sum_{n=0}^{k}2^{-n}=2-2^{-k}\\), so \\(f(k)=\\dfrac{2^{k}}{2^{k+1}-1}\\). This decreases from \\(1\\) towards \\(\\tfrac12\\) but always exceeds \\(\\tfrac12\\). Since \\(\\tfrac{255}{512}<\\tfrac12\\), no \\(k\\) works.' },
+{ n:12, stem:'Which of these values is the smallest?',
+  opts:['\\(\\sin(1)\\)','\\(\\cos\\!\\left(\\tfrac12\\right)\\)','\\(0.88\\)','\\(\\tfrac12\\tan\\!\\left(\\tfrac{\\pi}{3}\\right)\\)','\\(\\dfrac{\\sqrt2}{5}\\)'], correct:4,
+  sol:'\\(\\sin1\\approx0.842,\\ \\cos\\tfrac12\\approx0.878,\\ 0.88,\\ \\tfrac12\\tan\\tfrac{\\pi}{3}=\\tfrac{\\sqrt3}{2}\\approx0.866\\), whereas \\(\\dfrac{\\sqrt2}{5}\\approx0.283\\) is far smaller.' },
+{ n:13, stem:'Find the sum of the reciprocals of all of the positive factors of \\(1600\\).',
+  opts:['\\(\\dfrac{1}{3937}\\)','\\(\\dfrac{1600}{3937}\\)','\\(\\dfrac{3937}{1600}\\)','\\(\\dfrac{378}{1600}\\)','\\(\\dfrac{1600}{378}\\)','\\(\\dfrac{1}{378}\\)'], correct:2,
+  sol:'The sum of reciprocals of divisors of \\(N\\) is \\(\\dfrac{\\sigma(N)}{N}\\). For \\(1600=2^{6}\\cdot5^{2}\\), \\(\\sigma=127\\cdot31=3937\\), giving \\(\\dfrac{3937}{1600}\\).' },
+{ n:14, stem:'The digital root of a number is found by repeatedly summing its digits until one digit remains (e.g. \\(9678996\\to54\\to9\\)). What is the digital root of \\(7^{3935}\\)?',
+  opts:['\\(1\\)','\\(2\\)','\\(3\\)','\\(4\\)','\\(5\\)','\\(6\\)','\\(7\\)','\\(8\\)'], correct:3,
+  sol:'The digital root equals the value \\(\\bmod\\,9\\) (with \\(9\\) if divisible). Powers of \\(7\\) mod \\(9\\) cycle \\(7,4,1\\) with period \\(3\\); since \\(3935\\equiv2\\pmod3\\), \\(7^{3935}\\equiv7^{2}\\equiv4\\pmod9\\). So the digital root is \\(4\\).' },
+{ n:15, stem:'A function has \\(f(x)=f(6-x)\\) for all real \\(x\\). Given \\(\\left(\\int_2^3 f\\right)^{2}+\\left(\\int_4^6 f\\right)^{2}+\\left(\\int_2^4 f\\right)\\left(\\int_0^2 f\\right)-\\int_6^3 3f=-2\\), find the sum of the possible values of \\(\\int_0^3 f\\).',
+  opts:['\\(-10\\)','\\(-5\\)','\\(-3\\)','\\(0\\)','\\(3\\)','\\(5\\)','\\(10\\)','\\(\\tfrac{27}{2}\\)'], correct:2,
+  sol:'By symmetry about \\(x=3\\): with \\(a=\\int_2^3 f,\\ b=\\int_0^2 f=\\int_4^6 f\\), we have \\(\\int_2^4 f=2a\\) and \\(\\int_3^6 f=\\int_0^3 f=a+b=S\\). The relation becomes \\(a^{2}+b^{2}+2ab+3S=(a+b)^{2}+3S=S^{2}+3S=-2\\), so \\(S=-1\\) or \\(-2\\); their sum is \\(-3\\).' },
+{ n:16, stem:'\\(A\\) lies on \\((x-2)^{2}+(y-3)^{2}=4\\) and \\(B\\) lies on \\(x^{2}+y^{2}+8x+10y=r\\). Find the length of the interval within \\(0<r<125\\) for which the shortest possible distance \\(AB\\) is less than \\(1\\).',
+  opts:['\\(3\\)','\\(5\\)','\\(6\\)','\\(49\\)','\\(76\\)','\\(117\\)','\\(119\\)','\\(120\\)'], correct:5,
+  sol:'Centres \\((2,3)\\) and \\((-4,-5)\\) are \\(10\\) apart; radii \\(2\\) and \\(R=\\sqrt{r+41}\\). The minimum \\(AB\\) is \\(<1\\) exactly when \\(7<R<13\\). Intersecting \\(R\\in(\\sqrt{41},\\sqrt{166})\\) gives \\(R>7\\iff r>8\\), up to \\(r=125\\): length \\(125-8=117\\).' },
+{ n:17, stem:'Let \\(f(x)=\\left(1!\\,x\\right)^{\\left(2!\\,x\\right)^{\\left(3!\\,x\\right)^{\\left(4!\\,x\\right)^{\\left(5!\\,x\\right)^{\\left(6!\\,x\\right)}}}}}\\). Which is the closest value of \\(f\\!\\left(\\tfrac12\\right)\\)?',
+  opts:['\\(0\\)','\\(\\tfrac18\\)','\\(\\tfrac14\\)','\\(\\tfrac12\\)','\\(1\\)','\\(2\\)','\\(1000000\\)'], correct:3,
+  sol:'At \\(x=\\tfrac12\\) the levels are \\(1!\\,x=\\tfrac12,\\ 2!\\,x=1,\\ 3!\\,x=3,\\dots\\). The tower is right-associated, so the whole exponent on the base is \\((2!\\,x)^{(\\cdots)}=1^{(\\cdots)}=1\\). Hence \\(f\\!\\left(\\tfrac12\\right)=\\left(\\tfrac12\\right)^{1}=\\tfrac12\\).' },
+{ n:18, stem:'\\(45\\) people stand in a line. How many ways are there to choose \\(17\\) of them so that no two chosen people are adjacent (order does not matter)?',
+  opts:['\\(\\dfrac{45!}{28!\\,17!}\\)','\\(\\dfrac{43!}{26!\\,17!}\\)','\\(\\dfrac{28!}{17!\\,11!}\\)','\\(\\dfrac{29!}{17!\\,12!}\\)','\\(\\dfrac{17!\\,12!}{8!}\\)','\\(\\dfrac{2^{17}\\,45!}{12!}\\)'], correct:3,
+  sol:'Choosing \\(k\\) non-adjacent from a line of \\(n\\) gives \\(\\binom{n-k+1}{k}\\). Here \\(\\binom{45-17+1}{17}=\\binom{29}{17}=\\dfrac{29!}{17!\\,12!}\\).' },
+{ n:19, stem:'Consider \\(f(x)=\\ln\\!\\left(\\sqrt{x^{2}-2x+1}\\right)\\). Which statement is true?',
+  opts:['It is defined for all real \\(x\\).','Defined for all real \\(x<0\\) but not all real \\(x>0\\).','Defined for all real \\(x>0\\) but not all real \\(x<0\\).','Undefined for \\(x=e\\).','\\(8<f^{-1}(2)<9\\).','\\(f(x)=100\\) has no solutions.'], correct:4, also:[1], flawed:true,
+  sol:'FLAWED ITEM \u2014 two options are true. \\(f(x)=\\ln|x-1|\\), defined for \\(x\\ne1\\). Then (B) holds (all \\(x<0\\) are fine; \\(x=1>0\\) is not). And (E) holds too, since \\(\\ln|x-1|=2\\Rightarrow x=1+e^{2}\\approx8.39\\in(8,9)\\). Both B and E are defensible.' },
+{ n:20, stem:'\\(F(x)\\) is the fractional part of \\(x\\) (e.g. \\(F(5.43)=0.43\\)). Find an expression for \\(\\displaystyle\\int_{0}^{\\sqrt{k}}F(x^{2})\\,dx\\), where \\(k\\) is a positive integer.',
+  opts:['\\(\\tfrac13 k^{3/2}-F\\!\\left(\\tfrac13 k^{3/2}\\right)\\)','\\(\\tfrac13 k^{3/2}-\\sum_{n=0}^{k}n(\\sqrt{n+1}-\\sqrt{n})\\)','\\(\\tfrac13 k^{3/2}+\\sum_{n=0}^{k-1}n(\\sqrt{n+1}-\\sqrt{n})\\)','\\(\\tfrac13 k^{3/2}-\\sum_{n=0}^{k-1}n(\\sqrt{n+1}+\\sqrt{n})\\)','\\(\\tfrac13 k^{3/2}+\\left(\\sum_{n=0}^{k-1}\\sqrt{n}\\right)+(k-1)\\sqrt{k}\\)','\\(\\tfrac13 k^{3/2}+\\left(\\sum_{n=0}^{k-1}\\sqrt{n}\\right)+(1-k)\\sqrt{k}\\)'], correct:5,
+  sol:'\\(\\int_0^{\\sqrt k}x^{2}dx=\\tfrac13 k^{3/2}\\); and \\(\\int_0^{\\sqrt k}\\lfloor x^{2}\\rfloor dx=\\sum_{n=0}^{k-1}n(\\sqrt{n+1}-\\sqrt{n})=(k-1)\\sqrt k-\\sum_{n=0}^{k-1}\\sqrt n\\). Subtracting gives \\(\\tfrac13 k^{3/2}+\\sum_{n=0}^{k-1}\\sqrt n+(1-k)\\sqrt k\\).' }
+];
+const YOTTA2 = [
+{ n:1, stem:'Which of these statements is true?',
+  opts:['\\(\\sqrt{361}\\) is irrational','\\(\\sqrt{x^{2}}=x\\) for all real \\(x\\)','\\(f(x)=3x^{2}-x+5x^{\\frac12}+1\\) is a polynomial function','\\(\\dfrac{195}{13}\\) is an integer','\\(2+2=5\\)','\\(\\ln(-1)=\\pi\\)'], correct:3,
+  sol:'\\(\\dfrac{195}{13}=15\\), an integer. The rest fail: \\(\\sqrt{361}=19\\) is rational; \\(\\sqrt{x^{2}}=|x|\\), which differs from \\(x\\) for negative \\(x\\); the \\(5x^{1/2}\\) term means C is not a polynomial; and \\(\\ln(-1)\\) is not a real number.' },
+{ n:2, stem:'Which of these statements is true for positive integers \\(n\\)?<ul class="roman"><li><b>1.</b> \\(n\\) is prime <i>if</i> \\(n=6k+1\\) or \\(n=6k-1\\) for some integer \\(k\\).</li><li><b>2.</b> \\(n\\) is prime <i>only if</i> \\(n=6k+1\\) or \\(n=6k-1\\) for some integer \\(k\\).</li></ul>',
+  opts:['Neither','1 only','2 only','Both 1 and 2'], correct:0,
+  sol:'Statement 1 (\\(6k\\pm1\\Rightarrow\\) prime) fails at \\(25=6\\cdot4+1\\), composite. Statement 2 (prime \\(\\Rightarrow 6k\\pm1\\)) fails at the primes \\(2\\) and \\(3\\), which are not of that form. Neither is true. (For primes \\(\\ge5\\) statement 2 would hold.)' },
+{ n:3, stem:'Which of these statements is true about \\(x=2^{1}2^{2}2^{3}2^{4}2^{5}2^{6}2^{7}\\)?<ul class="roman"><li><b>1.</b> \\(x\\) can be written as \\(p^{2}+q^{2}\\) where \\(p\\) and \\(q\\) are 2 distinct positive integers.</li><li><b>2.</b> \\(x\\) can be written as \\(p^{2}-q^{2}\\) where \\(p\\) and \\(q\\) are 2 distinct positive integers.</li><li><b>3.</b> \\(x\\) can be written as \\(p^{2}q^{6}\\) where \\(p\\) and \\(q\\) are 2 distinct positive integers.</li></ul>',
+  opts:['None','1 only','2 only','3 only','1 and 2 only','1 and 3 only','2 and 3 only','1, 2 and 3'], correct:6,
+  sol:'\\(x=2^{1+2+\\cdots+7}=2^{28}\\). <b>1</b> fails: the only way to write a power of \\(2\\) as a sum of two squares uses \\(\\left(2^{14}\\right)^{2}+0^{2}\\) (an exhaustive check of \\(a^{2}+b^{2}=2^{28}\\) finds no positive pair). <b>2</b> holds: \\((p-q)(p+q)=2^{28}\\) with \\(p-q=2,\\ p+q=2^{27}\\) gives \\(p=2^{26}+1,\\ q=2^{26}-1\\). <b>3</b> holds: \\(2^{28}=\\left(2^{11}\\right)^{2}\\cdot2^{6}\\) with \\(p=2048,\\ q=2\\).' },
+{ n:4, stem:'\\(f(x)\\) is a function defined for all real \\(x\\). Here are 3 statements:<ul class="roman"><li><b>J:</b> \\(f(3)=1\\), and \\(f(5)=-2\\).</li><li><b>K:</b> \\(f(x)=0\\) has exactly 3 solutions in the interval \\(3<x<5\\).</li><li><b>L:</b> \\(f(x)=0\\) has an odd number of solutions in the interval \\(3<x<5\\).</li></ul>Here are 3 more statements:<ul class="roman"><li><b>R:</b> K is necessary for J.</li><li><b>S:</b> K is sufficient for J.</li><li><b>T:</b> L is necessary for J.</li></ul>Which of statements R, S and T are true?',
+  opts:['None','R only','S only','T only','R and S only','R and T only','S and T only','R, S and T'], correct:0,
+  sol:'No continuity is given. A step function with \\(f(x)=1\\) for \\(x\\le4\\) and \\(f(x)=-2\\) for \\(x>4\\) satisfies J with <i>zero</i> roots in \\((3,5)\\) \u2014 zero is neither 3 nor odd, so J forces neither K nor L: R and T fail. And a function with exactly 3 roots there but \\(f(3)=7\\) defeats S. (Even assuming continuity, T would still fail: a crossing plus a touching zero gives an even count.) None are true.' },
+{ n:5, stem:'Find the sum of the \\(x\\)-coordinates of the points of intersection of \\(y=(\\sqrt{x}-3)(\\sqrt{x}+3)\\) and \\(|x|=\\dfrac{y+20}{3}\\).',
+  opts:['There are no points of intersection','\\(-11.75\\)','\\(-3.5\\)','\\(-2.75\\)','\\(0\\)','\\(2.75\\)','\\(5.5\\)','\\(15.25\\)'], correct:6,
+  sol:'\\((\\sqrt{x}-3)(\\sqrt{x}+3)=x-9\\), but only on the domain \\(x\\ge0\\) where \\(\\sqrt{x}\\) is defined. There, \\(|x|=x\\) and \\(x-9=3x-20\\) gives \\(x=\\tfrac{11}{2}\\). The tempting second point from \\(x<0\\) (solving \\(x-9=-3x-20\\), i.e. \\(x=-\\tfrac{11}{4}\\)) lies outside the domain of the first curve. Sum \\(=5.5\\).' },
+{ n:6, stem:'\\(f(x)\\) is a polynomial function defined for all real \\(x\\).<div class="block">Statement <b>P</b>: \\(f^{\\prime}(5)=0\\).<br>Statement <b>Q</b>: There is a turning point at \\(x=5\\).</div>Which option is true?',
+  opts:['P is neither necessary nor sufficient for Q','P is necessary but not sufficient for Q','P is sufficient but not necessary for Q','P is necessary and sufficient for Q'], correct:1,
+  sol:'A turning point of a polynomial requires \\(f^{\\prime}=0\\) there, so Q \\(\\Rightarrow\\) P: P is necessary. But \\(f(x)=(x-5)^{3}\\) has \\(f^{\\prime}(5)=0\\) with no turning point (stationary inflection), so P is not sufficient.' },
+{ n:7, stem:'\\(A,B,C\\) are three points on a regular \\(n\\)-sided polygon, where \\(n\\ge3\\). Let \\(O\\) be the centre of the circle through \\(A,B,C\\). In radians, \\(\\angle AOB=\\dfrac{5}{6}\\pi\\) and \\(\\angle BOC=\\dfrac{2}{5}\\pi\\). Then \\(n\\) is necessarily a multiple of \\(k\\). What is the largest value of \\(k\\) for which this is true?',
+  opts:['\\(240\\)','\\(120\\)','\\(60\\)','\\(30\\)','\\(12\\)','\\(6\\)','\\(5\\)'], correct:2,
+  sol:'\\(O\\) is the polygon\u2019s circumcentre, so central angles between vertices are multiples of \\(\\dfrac{2\\pi}{n}\\). \\(\\dfrac{5\\pi}{6}=\\dfrac{2\\pi a}{n}\\Rightarrow a=\\dfrac{5n}{12}\\Rightarrow12\\mid n\\) (as \\(\\gcd(5,12)=1\\)); \\(\\dfrac{2\\pi}{5}=\\dfrac{2\\pi b}{n}\\Rightarrow b=\\dfrac{n}{5}\\Rightarrow5\\mid n\\). Hence \\(60\\mid n\\); and \\(n=60\\) itself works (\\(a=25,\\ b=12\\)), so \\(60\\) is the largest guaranteed divisor.' },
+{ n:8, stem:'Find a counterexample, if it exists, to the statement:<div class="block">\\(\\displaystyle\\int_{0}^{1}f(x)\\,dx\\) is equal to the area enclosed by \\(f(x)\\), the \\(x\\)-axis, \\(x=0\\) and \\(x=1\\), if \\(f(x)\\) is defined for \\(0\\le x\\le1\\).</div>',
+  opts:['\\(f(x)=(x-2)^{2}\\)','\\(f(x)=(\\sin(x)+1)(\\sin(x)-1)\\)','\\(f(x)=\\ln(x)\\)','\\(f(x)=1-x\\)','\\(f(x)=\\cos(x)\\)','The statement is incorrect, but none of the above are counterexamples','The statement is correct, so none of the above are counterexamples'], correct:1,
+  sol:'\\((\\sin x+1)(\\sin x-1)=\\sin^{2}x-1=-\\cos^{2}x\\le0\\) on \\([0,1]\\): the integral is negative while the enclosed area is positive \u2014 a counterexample. \\((x-2)^{2},\\ 1-x,\\ \\cos x\\) are all \\(\\ge0\\) on \\([0,1]\\), so integral \\(=\\) area. \\(\\ln x\\) is not defined at \\(x=0\\), so it fails the hypothesis and cannot serve as a counterexample.' },
+{ n:9, stem:'It is given that \\(\\displaystyle\\int u\\,\\frac{dv}{dx}\\,dx=uv-\\int v\\,\\frac{du}{dx}\\,dx\\). Here is an attempt to prove \\(0=1\\):<div class="block"><b>1.</b> Let \\(u=\\dfrac1x\\) and \\(\\dfrac{dv}{dx}=1\\).<br><b>2.</b> \\(\\dfrac{du}{dx}=-\\dfrac{1}{x^{2}}\\) and \\(v=x\\).<br><b>3.</b> \\(\\displaystyle\\int\\frac1x\\,dx=1+\\int\\frac1x\\,dx\\).<br><b>4.</b> Cancel \\(\\displaystyle\\int\\frac1x\\,dx\\) from both sides. Therefore \\(0=1\\). QED.</div>',
+  opts:['The proof is incorrect, and the first error is on line 1.','The proof is incorrect, and the first error is on line 2.','The proof is incorrect, and the first error is on line 3.','The proof is incorrect, and the first error is on line 4.','The proof is fully correct.'], correct:3,
+  sol:'Lines 1\u20132 are legitimate choices (any antiderivative \\(v\\) may be used). Line 3 is a true statement about <i>families</i> of antiderivatives: both sides describe the same family, since the \\(+1\\) is absorbed into the arbitrary constant. The first error is line 4: an indefinite integral is only defined up to an additive constant, so it cannot be cancelled from both sides as though it were a single number.' },
+{ n:10, stem:'Find the full range of values of the real number \\(k\\) such that \\(\\ln(x)^{2}+\\ln\\!\\left(\\dfrac{1}{x^{6}}\\right)+k=0\\) has exactly 2 real solutions.',
+  opts:['\\(k>9\\)','\\(k<9\\)','\\(k>0\\)','\\(k<0\\)','\\(0<k<9\\)','\\(k<0,\\ k>9\\)'], correct:1,
+  sol:'With \\(t=\\ln x\\) (a bijection from \\(x>0\\) to \\(\\mathbb{R}\\)) the equation is \\(t^{2}-6t+k=0\\). Exactly two real \\(x\\)-solutions \\(\\iff\\) two distinct real \\(t\\)-roots \\(\\iff\\) \\(36-4k>0\\iff k<9\\). At \\(k=9\\) the double root \\(t=3\\) gives only one solution, \\(x=e^{3}\\).' },
+{ n:11, stem:'A repunit is an integer consisting of only ones (e.g. \\(1111\\), \\(1\\), \\(11111111\\)). Complete the sentence: a repunit with \\(n\\) digits (\\(n>0\\)) is divisible by 7 if and only if\u2026',
+  opts:['\\(n\\) is a multiple of 3','\\(n\\) is a multiple of 6','\\(n\\) is a multiple of 7','\\(n\\) is a multiple of 12','\\(n\\) is of the form \\(4k+6\\) where \\(k\\) is a non-negative integer','\\(n\\) is of the form \\(2k+4\\) where \\(k\\) is a non-negative integer'], correct:1,
+  sol:'\\(R_n=\\dfrac{10^{n}-1}{9}\\), and since \\(\\gcd(9,7)=1\\), \\(7\\mid R_n\\iff10^{n}\\equiv1\\pmod7\\). As \\(10\\equiv3\\pmod 7\\) and the powers of \\(3\\) cycle \\(3,2,6,4,5,1\\) with period \\(6\\), this holds exactly when \\(6\\mid n\\). (Check: \\(111111=7\\times15873\\).)' },
+{ n:12, stem:'\\(f(x)=5x^{2}-x^{3}-7x+3\\), and \\(0\\le x\\le4\\). Find the maximum value of \\(f(x)\\) in this range.',
+  opts:['\\(\\dfrac{32}{27}\\)','\\(3\\)','\\(0\\)','\\(12\\)','\\(\\dfrac{46}{27}\\)','\\(\\dfrac{46}{3}\\)','\\(-4\\)'], correct:1,
+  sol:'\\(f^{\\prime}(x)=10x-3x^{2}-7=-(3x-7)(x-1)\\): \\(f\\) decreases on \\([0,1]\\), increases on \\([1,\\tfrac73]\\), decreases on \\([\\tfrac73,4]\\). Candidates: \\(f(0)=3\\), the local max \\(f\\!\\left(\\tfrac73\\right)=\\tfrac{32}{27}\\), and \\(f(4)=-9\\). The maximum is \\(3\\), at the endpoint \\(x=0\\) \u2014 the interior local maximum is the trap.' },
+{ n:13, stem:'A word is <i>good</i> if and only if it consists of no letters other than A, B, C, D (e.g. AABDC, CCCB, AB). How many 5-letter good words have at least one A and at least one C? (Order matters: ABCDA and ADCBA are distinct.)',
+  opts:['\\(0\\)','\\(32\\)','\\(160\\)','\\(256\\)','\\(570\\)','\\(813\\)','\\(1024\\)','\\(1280\\)'], correct:4,
+  sol:'Inclusion\u2013exclusion: \\(4^{5}-2\\cdot3^{5}+2^{5}=1024-486+32=570\\) (all words, minus those missing A, minus those missing C, adding back those missing both).' },
+{ n:14, stem:'Which of these numbers is the smallest?',
+  opts:['\\(\\ln(9)\\)','\\(\\pi^{\\log_{3}(2)}\\)','\\(\\dfrac{1337}{668}\\)','\\(-2\\cos(3.14)\\)','\\(\\sqrt[3]{5}\\)','\\(3^{\\sin\\left(\\frac{25\\pi}{6}\\right)}\\)'], correct:4,
+  sol:'\\(\\sin\\!\\left(\\tfrac{25\\pi}{6}\\right)=\\sin\\!\\left(\\tfrac{\\pi}{6}\\right)=\\tfrac12\\), so F \\(=\\sqrt3\\approx1.732\\). The decisive comparison is E vs F: raising both to the 6th power, \\(\\left(\\sqrt[3]{5}\\right)^{6}=5^{2}=25<27=3^{3}=\\left(\\sqrt3\\right)^{6}\\), so \\(\\sqrt[3]{5}<\\sqrt3\\). The rest are near or above \\(2\\): \\(\\ln9\\approx2.197\\); \\(\\pi^{\\log_32}\\approx2.059\\); \\(\\tfrac{1337}{668}\\approx2.0015\\); \\(-2\\cos(3.14)\\approx1.9999975\\). Smallest is \\(\\sqrt[3]{5}\\).' },
+{ n:15, stem:'Which of these statements is true for two positive integers \\(p\\) and \\(q\\), where \\(p\\) is prime?<ul class="roman"><li><b>1.</b> The highest common factor of \\(p\\) and \\(q\\) is 1 if \\(q\\) is also prime.</li><li><b>2.</b> \\(pq\\) has exactly four factors.</li></ul>',
+  opts:['Neither','1 only','2 only','Both 1 and 2'], correct:0,
+  sol:'Both fail at \\(q=p\\): then \\(q\\) is prime yet \\(\\operatorname{hcf}(p,q)=p\\ne1\\), and \\(pq=p^{2}\\) has exactly three factors \\((1,p,p^{2})\\). (Statement 2 also fails at \\(q=1\\).) Neither must hold.' },
+{ n:16, stem:'Of the following 7 statements about numbered lamps in a factory, exactly one of them is true. Which one is the true statement? [\\(n\\) is a positive integer]',
+  opts:['If \\(n\\) is even, lamp \\(n\\) is switched on.','If \\(n\\) is odd, lamp \\(n\\) is switched off.','If \\(n\\) is even, lamp \\(n\\) is switched off.','If \\(n\\) is odd, lamp \\(n\\) is switched on.','If lamp \\(n\\) is switched on, then \\(n\\) is even.','If lamp \\(n\\) is switched off, then \\(n\\) is odd.','If lamp \\(n\\) is switched off, then \\(n\\) is even.'], correct:2,
+  sol:'Taking contrapositives: E (\u201con \\(\\Rightarrow\\) even\u201d) \\(\\equiv\\) B (\u201codd \\(\\Rightarrow\\) off\u201d); F \\(\\equiv\\) A; G \\(\\equiv\\) D. Each of those six therefore comes in a pair with identical truth value \u2014 if one of them were the single true statement, its partner would be true too. Only C is unpaired, so C must be the true one. (Consistent: all even lamps off, with at least one odd lamp on and one off.)' },
+{ n:17, stem:'For how many of these functions is \\(f^{\\prime}(x)\\) strictly increasing for all real \\(x\\)?<ul class="roman"><li><b>1.</b> \\(\\ln(x)\\)</li><li><b>2.</b> \\(\\sin(x)\\)</li><li><b>3.</b> \\(-\\ln(x)\\)</li><li><b>4.</b> \\(x^{2}\\)</li><li><b>5.</b> \\(x^{3}\\)</li></ul>',
+  opts:['\\(0\\)','\\(1\\)','\\(2\\)','\\(3\\)','\\(4\\)','\\(5\\)'], correct:1,
+  sol:'Only \\(x^{2}\\) qualifies: \\(f^{\\prime}(x)=2x\\) is strictly increasing on all of \\(\\mathbb{R}\\). \\(\\ln x\\) and \\(-\\ln x\\) are not defined for all real \\(x\\) (and \\(-\\tfrac1x\\) is only increasing on each half of its domain); \\((\\sin x)^{\\prime}=\\cos x\\) oscillates; \\((x^{3})^{\\prime}=3x^{2}\\) is decreasing for \\(x<0\\). Count: 1.' },
+{ n:18, stem:'All 720 permutations of the word \u201cNUMBER\u201d are generated and arranged in alphabetical order. In what position is the word \u201cNUMBER\u201d?',
+  opts:['383rd','385th','468th','469th','487th','490th','618th','622nd'], correct:3,
+  sol:'Letters in order: B, E, M, N, R, U. Before N\u00b7\u00b7\u00b7\u00b7\u00b7: \\(3\\times5!=360\\). With N fixed, second letters before U (B, E, M, R): \\(4\\times4!=96\\). With NU, third letters before M (B, E): \\(2\\times3!=12\\). B, E, R then contribute nothing further. \\(360+96+12=468\\) words precede, so NUMBER is 469th.' },
+{ n:19, stem:'A squarefree integer is a positive integer which isn\u2019t divisible by the square of a prime. Which of these statements about squarefree integers is correct?<ul class="roman"><li><b>1.</b> A squarefree integer with \\(n\\) prime factors has \\(2^{n}\\) factors.</li><li><b>2.</b> The product of two squarefree integers is always squarefree.</li><li><b>3.</b> A squarefree integer cannot be a power of 36.</li></ul>',
+  opts:['None of them','1 only','2 only','3 only','1 and 2 only','1 and 3 only','2 and 3 only','1, 2 and 3'], correct:1,
+  sol:'<b>1</b>: a squarefree \\(N=p_1p_2\\cdots p_n\\) has divisors given by including or excluding each prime: \\(2^{n}\\). True. <b>2</b>: \\(6\\times10=60=2^{2}\\cdot15\\) is not squarefree. False. <b>3</b>: the trap is the zero exponent \u2014 \\(36^{0}=1\\) is a power of \\(36\\), and \\(1\\) is squarefree by the given definition (it is divisible by no prime square). So a squarefree integer <i>can</i> be a power of 36. False. (Every \\(36^{k}\\) with \\(k\\ge1\\) is divisible by \\(2^{2}\\), which is what makes the edge case easy to miss.) Only statement 1.' },
+{ n:20, stem:'Solve these simultaneous equations to find the real numbers \\(x,y,z\\). Hence find \\(x+y^{2}+z^{3}\\).<div class="block">\\(x^{2}+6y+10=0\\)<br>\\(3y^{2}+6z+5=-1\\)<br>\\(40x-5z^{2}=70\\)</div>',
+  opts:['\\(4\\)','\\(6\\)','\\(10\\)','\\(12\\)','\\(14\\)','\\(16\\)','No solution exists'], correct:6,
+  sol:'Divide the equations by \\(1,\\ 3,\\ -5\\) and add: \\(\\left(x^{2}+6y+10\\right)+\\left(y^{2}+2z+2\\right)+\\left(z^{2}-8x+14\\right)=(x-4)^{2}+(y+3)^{2}+(z+1)^{2}=0\\). This forces the unique candidate \\((x,y,z)=(4,-3,-1)\\) \u2014 which fails the original equations (first: \\(16-18+10=8\\ne0\\)). A necessary condition with no surviving candidate means no real solution exists. (Skipping the final check gives the trap \\(4+9-1=12\\).)' }
+];
+
+const PAPERS = [
+  { id:'p1a', title:'Paper 1 · Set A', sub:'Applications of Mathematical Knowledge', type:1, group:1, questions:P1A },
+  { id:'p1b', title:'Paper 1 · Set B', sub:'Applications of Mathematical Knowledge', type:1, group:1, questions:P1B },
+  { id:'p2a', title:'Paper 2 · Set A', sub:'Mathematical Reasoning', type:2, group:2, questions:P2A },
+  { id:'p2b', title:'Paper 2 · Set B', sub:'Mathematical Reasoning', type:2, group:2, questions:P2B },
+  { id:'yotta', title:'Mock Paper 1 · yotta', sub:'In the style of a TMUA Paper 1 · community-contributed', type:1, group:3, questions:YOTTA },
+  { id:'yotta2', title:'Mock Paper 2 · yotta', sub:'In the style of a TMUA Paper 2 · community-contributed', type:2, group:3, questions:YOTTA2 },
+];
+
+const LETTERS = ['A','B','C','D','E','F','G','H'];
+function isCorrectOpt(q,i){ return i===q.correct || (q.also && q.also.indexOf(i)!==-1); }
+function isCorrectAns(q,a){ return a!==null && isCorrectOpt(q,a); }
+
+/* ---------------- state ---------------- */
+let active = null;
+let QUESTIONS = [];
+let idx = 0, answers = [], flags = [];
+let submitted = false, reviewMode = false;
+let secondsLeft = 0, timerId = null, noTimer = false;
+let sessionMode = '75 min';
+
+const $ = id => document.getElementById(id);
+function typeset(el){ if(window.MathJax && MathJax.typesetPromise){ MathJax.typesetPromise([el]).catch(()=>{}); } }
+
+/* ---------------- persistence & profiles ---------------- */
+const SAVE_KEY='tmua-sim-v2', OLD_KEY='tmua-sim-v1';
+const Store = {
+  async readKey(key){
+    if(window.storage && window.storage.get){
+      try{ const r=await window.storage.get(key); if(r && r.value) return JSON.parse(r.value); }catch(e){}
+      return null;
+    }
+    try{ const v=localStorage.getItem(key); return v?JSON.parse(v):null; }catch(e){}
+    return null;
+  },
+  async write(obj){
+    const s=JSON.stringify(obj);
+    if(window.storage && window.storage.set){
+      try{ await window.storage.set(SAVE_KEY, s); return; }catch(e){}
+    }
+    try{ localStorage.setItem(SAVE_KEY, s); }catch(e){}
+  }
+};
+let ROOT = { v:2, profiles:{}, data:{}, lastUser:null };
+let currentUser = null;
+let STATE = { results:{}, inprogress:{} };   // reference into ROOT.data[currentUser]
+
+let saveDebounce=null;
+function persist(){ clearTimeout(saveDebounce); saveDebounce=setTimeout(()=>{ Store.write(ROOT); }, 1200); }
+function persistNow(){ clearTimeout(saveDebounce); Store.write(ROOT); }
+function snapshotProgress(){
+  if(!active || submitted || reviewMode || !currentUser) return;
+  STATE.inprogress[active.id]={ answers:answers.slice(), flags:flags.slice(), idx, secondsLeft, noTimer, mode:sessionMode, savedAt:Date.now() };
+  persist();
+}
+function fmtDate(t){
+  try{ return new Date(t).toLocaleDateString(undefined,{day:'numeric',month:'short'})+' '+new Date(t).toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'}); }
+  catch(e){ return ''; }
+}
+async function hashPin(pin){
+  const s='tmua:'+pin;
+  try{
+    const buf=await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+    return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+  }catch(e){
+    let h=5381; for(let i=0;i<s.length;i++){ h=((h<<5)+h+s.charCodeAt(i))>>>0; }
+    return 'x'+h.toString(16);
+  }
+}
+
+/* ---------------- login ---------------- */
+let pinTarget=null;
+function buildLogin(){
+  const list=$('profileList'); list.innerHTML='';
+  $('pinBox').classList.add('hidden'); $('loginErr').textContent=''; pinTarget=null;
+  const ids=Object.keys(ROOT.profiles).sort((a,b)=>(b===ROOT.lastUser)-(a===ROOT.lastUser));
+  ids.forEach(id=>{
+    const p=ROOT.profiles[id];
+    const d=ROOT.data[id]||{results:{}};
+    const attempts=Object.values(d.results||{}).reduce((n,arr)=>n+arr.length,0);
+    const row=document.createElement('button');
+    row.className='profrow'; row.setAttribute('type','button');
+    row.innerHTML='<span class="pname">'+escapeHtml(p.name)+'</span>'
+      +(p.pin?'<span class="lock">&#128274; PIN</span>':'')
+      +'<span class="pstats">'+attempts+' attempt'+(attempts===1?'':'s')+' recorded</span>'
+      +'<span class="del" data-del="'+id+'">Delete</span>';
+    row.addEventListener('click',(e)=>{
+      if(e.target && e.target.getAttribute && e.target.getAttribute('data-del')){ deleteProfile(id, p.name); return; }
+      if(p.pin){ askPin(id, p.name); } else { signIn(id); }
+    });
+    list.appendChild(row);
+  });
+  if(!ids.length){
+    const msg=document.createElement('p');
+    msg.style.cssText='font-size:14px;color:var(--ink-soft)';
+    msg.textContent='No profiles yet — create one below to begin.';
+    list.appendChild(msg);
+  }
+}
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function askPin(id,name){
+  pinTarget=id;
+  $('pinPrompt').textContent='Enter PIN for '+name+':';
+  $('pinInput').value='';
+  $('pinBox').classList.remove('hidden');
+  $('pinInput').focus();
+}
+$('pinCancel').addEventListener('click', ()=>{ pinTarget=null; $('pinBox').classList.add('hidden'); });
+$('pinGo').addEventListener('click', tryPin);
+$('pinInput').addEventListener('keydown', e=>{ if(e.key==='Enter') tryPin(); });
+async function tryPin(){
+  if(!pinTarget) return;
+  const h=await hashPin($('pinInput').value);
+  if(h===ROOT.profiles[pinTarget].pin){ signIn(pinTarget); }
+  else { $('loginErr').textContent='Incorrect PIN.'; $('pinInput').value=''; $('pinInput').focus(); }
+}
+$('createBtn').addEventListener('click', async ()=>{
+  const name=$('newName').value.trim();
+  if(!name){ $('loginErr').textContent='Enter a name for the profile.'; return; }
+  if(Object.values(ROOT.profiles).some(p=>p.name.toLowerCase()===name.toLowerCase())){ $('loginErr').textContent='A profile with that name already exists.'; return; }
+  const pinRaw=$('newPin').value;
+  const id='u'+Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36);
+  ROOT.profiles[id]={ name, pin: pinRaw? await hashPin(pinRaw) : null, created:Date.now() };
+  ROOT.data[id]={ results:{}, inprogress:{} };
+  $('newName').value=''; $('newPin').value='';
+  persist(); signIn(id);
+});
+function deleteProfile(id,name){
+  if(!confirm('Delete profile "'+name+'" and all of its saved attempts? This cannot be undone.')) return;
+  delete ROOT.profiles[id]; delete ROOT.data[id];
+  if(ROOT.lastUser===id) ROOT.lastUser=null;
+  persistNow(); buildLogin();
+}
+function signIn(id){
+  currentUser=id; ROOT.lastUser=id;
+  if(!ROOT.data[id]) ROOT.data[id]={results:{},inprogress:{}};
+  ROOT.data[id].results=ROOT.data[id].results||{};
+  ROOT.data[id].inprogress=ROOT.data[id].inprogress||{};
+  STATE=ROOT.data[id];
+  persist();
+  $('profName').textContent=ROOT.profiles[id].name;
+  $('loginScreen').classList.add('hidden');
+  buildLibrary();
+  $('libraryScreen').classList.remove('hidden');
+  window.scrollTo(0,0);
+}
+$('signOutBtn').addEventListener('click', ()=>{
+  persistNow(); currentUser=null; STATE={results:{},inprogress:{}};
+  $('libraryScreen').classList.add('hidden');
+  buildLogin(); $('loginScreen').classList.remove('hidden');
+});
+
+/* ---------------- library ---------------- */
+function buildLibrary(){
+  const grids={1:$('grid1'),2:$('grid2'),3:$('grid3')};
+  Object.values(grids).forEach(g=>g.innerHTML='');
+  PAPERS.forEach(p=>{
+    const flawed=p.questions.filter(q=>q.flawed).length;
+    const tag = p.group===3 ? 'Full mock' : (p.type===1?'Applications':'Reasoning');
+    const hist=STATE.results[p.id]||[];
+    const ip=STATE.inprogress[p.id];
+    let stat='';
+    if(hist.length){
+      const best=Math.max(...hist.map(r=>Math.round(100*r.c/Math.max(1,r.s))));
+      stat=' · best '+best+'% · '+hist.length+' attempt'+(hist.length>1?'s':'');
+    }
+    const b=document.createElement('button');
+    b.className='paper t'+p.type;
+    b.innerHTML='<span class="pt">'+tag+'</span>'
+      +'<span class="pn">'+p.title+'</span>'
+      +'<span class="pd">'+p.sub+'</span>'
+      +'<span class="meta">'+p.questions.length+' questions'
+      +(flawed?' · '+flawed+' flagged':'')
+      +stat
+      +(ip?' · <span class="ip">In progress</span>':'')
+      +' <span class="go">Start &rarr;</span></span>';
+    b.addEventListener('click',()=>openStart(p));
+    (grids[p.group]||grids[1]).appendChild(b);
+  });
+}
+
+function openStart(p){
+  active=p; QUESTIONS=p.questions;
+  const t=parseInt($('timeSelect').value,10);
+  $('startBrand').textContent = p.group===3 ? 'Community mock' : p.title.split('·')[0].trim();
+  $('startTitle').textContent=p.title;
+  $('startSub').textContent=p.sub+'.';
+  $('startCount').textContent=p.questions.length;
+  $('startTime').textContent = t===0 ? 'Untimed' : t+' minutes';
+
+  const recs=(STATE.results[p.id]||[]);
+  const hist=recs.slice(-5).reverse();
+  const ah=$('attemptHist');
+  if(hist.length){
+    ah.innerHTML='<div class="ahead">Previous attempts'+(hist.some(r=>r.a)?' — select one to review it with solutions':'')+'</div>';
+    hist.forEach(r=>{
+      const row=document.createElement('div');
+      row.className='arow'+(r.a?' clickable':'');
+      row.innerHTML='<span>'+fmtDate(r.t)+'</span>'
+        +(r.a?'<span class="rv">Review &rarr;</span>':'')
+        +'<span class="sc">Score <b>'+r.c+' / '+r.s+'</b> ('+Math.round(100*r.c/Math.max(1,r.s))+'%)</span>';
+      if(r.a) row.addEventListener('click',()=>reviewAttempt(r));
+      ah.appendChild(row);
+    });
+    ah.classList.remove('hidden');
+  } else { ah.classList.add('hidden'); ah.innerHTML=''; }
+
+  buildQGrid(p);
+  renderLeaderboard(p);
+
+  const ip=STATE.inprogress[p.id];
+  const rb=$('resumeBtn');
+  if(ip && Array.isArray(ip.answers) && ip.answers.length===p.questions.length){
+    const done=ip.answers.filter(a=>a!==null).length;
+    rb.textContent='Resume saved session ('+done+'/'+p.questions.length+' answered'+(ip.noTimer?'':' · '+fmtTime(Math.max(0,ip.secondsLeft))+' left')+')';
+    rb.classList.remove('hidden');
+    $('beginBtn').textContent='Start fresh';
+  } else {
+    rb.classList.add('hidden');
+    $('beginBtn').textContent='Begin test';
+  }
+
+  $('libraryScreen').classList.add('hidden');
+  $('startScreen').classList.remove('hidden');
+}
+
+function toLibrary(){
+  if(timerId) clearInterval(timerId);
+  ['startScreen','topbar','substrip','testMain','footbar','resultScreen','navOver'].forEach(id=>$(id).classList.add('hidden'));
+  submitted=false; reviewMode=false;
+  buildLibrary();
+  $('libraryScreen').classList.remove('hidden');
+  window.scrollTo(0,0);
+}
+$('backToLib1').addEventListener('click', toLibrary);
+$('backToLib2').addEventListener('click', toLibrary);
+
+/* ---------------- start ---------------- */
+$('beginBtn').addEventListener('click', ()=>{
+  delete STATE.inprogress[active.id]; persist();
+  const t=parseInt($('timeSelect').value,10);
+  noTimer=(t===0); secondsLeft=noTimer?0:t*60;
+  sessionMode = noTimer ? 'Untimed' : (t+' min');
+  startTest(false);
+});
+$('resumeBtn').addEventListener('click', ()=>{
+  const s=STATE.inprogress[active.id];
+  if(!s){ $('resumeBtn').classList.add('hidden'); return; }
+  noTimer=!!s.noTimer; secondsLeft=noTimer?0:Math.max(1, s.secondsLeft|0);
+  sessionMode = s.mode || (noTimer ? 'Untimed' : 'Timed');
+  startTest(true);
+});
+
+function startTest(resume){
+  const s = resume ? STATE.inprogress[active.id] : null;
+  const N = QUESTIONS.length;
+  if(s && Array.isArray(s.answers) && s.answers.length===N){
+    answers=s.answers.slice(); flags=(Array.isArray(s.flags)&&s.flags.length===N)?s.flags.slice():new Array(N).fill(false);
+    idx=Math.min(Math.max(0, s.idx|0), N-1);
+  } else {
+    idx=0; answers=new Array(N).fill(null); flags=new Array(N).fill(false);
+  }
+  submitted=false; reviewMode=false;
+  $('startScreen').classList.add('hidden'); $('resultScreen').classList.add('hidden');
+  $('topbar').classList.remove('hidden'); $('substrip').classList.remove('hidden');
+  $('testMain').classList.remove('hidden'); $('footbar').classList.remove('hidden');
+  $('barSub').textContent = active.title + ' — practice simulation';
+  $('progTot').textContent = N;
+  const el=$('timer'); el.classList.remove('warn','crit');
+  if(noTimer){ el.textContent='—:—:—'; } else { updateTimerDisplay(); timerId=setInterval(tick,1000); }
+  render();
+}
+
+function tick(){
+  secondsLeft--; updateTimerDisplay();
+  if(secondsLeft<=0){ clearInterval(timerId); submit(true); return; }
+  if(secondsLeft%120===0) snapshotProgress();
+}
+function fmtTime(s){
+  const h=Math.floor(s/3600), m=Math.floor((s%3600)/60), sec=s%60;
+  return h+':'+String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0');
+}
+function updateTimerDisplay(){
+  const el=$('timer'); el.textContent=fmtTime(Math.max(0,secondsLeft));
+  el.classList.toggle('warn', secondsLeft<=300 && secondsLeft>60);
+  el.classList.toggle('crit', secondsLeft<=60);
+}
+
+/* ---------------- render ---------------- */
+function render(){
+  const q=QUESTIONS[idx];
+  $('progNow').textContent=idx+1;
+  $('stem').innerHTML='<b>Q'+(idx+1)+'.</b> '+q.stem;
+
+  const wrap=$('options'); wrap.innerHTML='';
+  const flawedNoAns = (q.correct===99);
+  q.opts.forEach((o,i)=>{
+    const b=document.createElement('button'); b.setAttribute('type','button');
+    let cls='';
+    if(reviewMode){
+      if(!flawedNoAns && isCorrectOpt(q,i)) cls=' correct';
+      else if(answers[idx]===i) cls=' wrong';
+    }
+    else if(answers[idx]===i){ cls=' sel'; }
+    b.className='opt'+cls;
+    let mark='';
+    if(reviewMode){
+      if(!flawedNoAns && isCorrectOpt(q,i)) mark='<span class="mark">Correct</span>';
+      else if(answers[idx]===i) mark='<span class="mark">Your answer</span>';
+    }
+    b.innerHTML='<span class="radio"></span><span class="letter">'+LETTERS[i]+'</span><span class="body">'+o+'</span>'+mark;
+    if(!reviewMode) b.addEventListener('click',()=>choose(i));
+    wrap.appendChild(b);
+  });
+
+  const sol=$('solution');
+  if(reviewMode){ sol.classList.remove('hidden'); sol.innerHTML='<h4>Worked solution</h4>'+q.sol; }
+  else { sol.classList.add('hidden'); sol.innerHTML=''; }
+
+  $('flagWrap').classList.toggle('hidden', reviewMode);
+  $('flagWrap').classList.toggle('on', flags[idx]);
+  $('flagChk').checked = !!flags[idx];
+
+  $('prevBtn').disabled=(idx===0);
+  const last=(idx===QUESTIONS.length-1);
+  $('nextBtn').textContent = last ? (reviewMode?'Finish review':'Next') : 'Next';
+  $('exitBtn').classList.toggle('hidden', reviewMode);
+
+  typeset($('testMain')); window.scrollTo(0,0);
+  snapshotProgress();
+}
+
+function choose(i){ if(reviewMode) return; answers[idx]=(answers[idx]===i)?null:i; render(); }
+
+$('prevBtn').addEventListener('click', ()=>{ if(idx>0){ idx--; render(); } });
+$('nextBtn').addEventListener('click', ()=>{ if(idx<QUESTIONS.length-1){ idx++; render(); } else if(reviewMode){ backToResults(); } });
+$('flagChk').addEventListener('change', ()=>{ if(!reviewMode){ flags[idx]=$('flagChk').checked; render(); } });
+
+/* ---------------- review screen ---------------- */
+$('reviewBtn').addEventListener('click', openNav);
+$('navClose').addEventListener('click', ()=>$('navOver').classList.add('hidden'));
+
+function openNav(){
+  const tb=$('navTable'); tb.innerHTML='';
+  QUESTIONS.forEach((q,i)=>{
+    const tr=document.createElement('tr');
+    tr.className='row'+(i===idx?' current':'');
+    const ans = answers[i]!==null;
+    tr.innerHTML='<td>Question '+(i+1)+'</td>'
+      +'<td class="'+(ans?'st-ans':'st-un')+'">'+(ans?'Answered ('+LETTERS[answers[i]]+')':'Unanswered')+'</td>'
+      +'<td>'+(flags[i]?'<span class="flg">&#9873;</span>':'')+'</td>';
+    tr.addEventListener('click',()=>{ idx=i; $('navOver').classList.add('hidden'); render(); });
+    tb.appendChild(tr);
+  });
+  const a=answers.filter(x=>x!==null).length;
+  $('answeredCount').textContent=a;
+  $('unansweredCount').textContent=QUESTIONS.length-a;
+  $('flaggedCount').textContent=flags.filter(Boolean).length;
+  $('endBtn').textContent = submitted ? 'Back to results' : 'End Exam';
+  $('endBtn').onclick = submitted ? backToResults : confirmEnd;
+  $('navOver').classList.remove('hidden');
+}
+function confirmEnd(){
+  const un=answers.filter(a=>a===null).length;
+  let msg='End the exam and see your result?';
+  if(un>0) msg=un+' question'+(un>1?'s are':' is')+' unanswered. End the exam anyway?';
+  if(confirm(msg)) submit(false);
+}
+
+/* ---------------- per-question history ---------------- */
+function buildQGrid(p){
+  const g=$('qGrid');
+  const recs=(STATE.results[p.id]||[]).filter(r=>Array.isArray(r.a) && r.a.length===p.questions.length);
+  if(!recs.length){ g.classList.add('hidden'); g.innerHTML=''; return; }
+  const N=p.questions.length;
+  const shown=recs.slice(-8);
+  let html='<table><tr><th class="lab">Question history</th>';
+  for(let i=0;i<N;i++) html+='<th>Q'+(i+1)+'</th>';
+  html+='</tr>';
+  shown.forEach(r=>{
+    html+='<tr><td class="lab">'+fmtDate(r.t)+'</td>';
+    for(let i=0;i<N;i++){
+      const q=p.questions[i];
+      if(q.correct===99){ html+='<td class="sk">&mdash;</td>'; continue; }
+      const a=(r.a[i]===undefined)?null:r.a[i];
+      if(a===null) html+='<td class="sk">&middot;</td>';
+      else if(isCorrectOpt(q,a)) html+='<td class="ok">&#10003;</td>';
+      else html+='<td class="no">&#10007;</td>';
+    }
+    html+='</tr>';
+  });
+  html+='<tr class="agg"><td class="lab">Correct</td>';
+  for(let i=0;i<N;i++){
+    const q=p.questions[i];
+    if(q.correct===99){ html+='<td>&mdash;</td>'; continue; }
+    let c=0;
+    recs.forEach(r=>{ if(isCorrectAns(q,(r.a[i]===undefined)?null:r.a[i])) c++; });
+    html+='<td>'+c+'/'+recs.length+'</td>';
+  }
+  html+='</tr></table>';
+  g.innerHTML=html; g.classList.remove('hidden');
+}
+
+function reviewAttempt(rec){
+  if(!Array.isArray(rec.a) || rec.a.length!==QUESTIONS.length) return;
+  if(timerId) clearInterval(timerId);
+  answers=rec.a.map(a=>(a===undefined)?null:a);
+  flags=new Array(QUESTIONS.length).fill(false);
+  idx=0; submitted=true; reviewMode=false; noTimer=true;
+  $('startScreen').classList.add('hidden');
+  showResults();
+}
+
+/* ---------------- leaderboard ---------------- */
+async function lbRequest(path, opts){
+  const ctl=new AbortController(); const to=setTimeout(()=>ctl.abort(), 6000);
+  try{
+    const r=await fetch(LEADERBOARD_URL.replace(/\/+$/,'')+path, Object.assign({signal:ctl.signal}, opts||{}));
+    if(!r.ok) throw new Error('http '+r.status);
+    return await r.json();
+  } finally { clearTimeout(to); }
+}
+function lbGet(pid){ return lbRequest('/leaderboards/'+encodeURIComponent(pid)+'.json'); }
+function lbPut(pid, uid, entry){
+  return lbRequest('/leaderboards/'+encodeURIComponent(pid)+'/'+encodeURIComponent(uid)+'.json',
+    { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(entry) });
+}
+function lbSortEntries(obj){
+  const arr=Object.keys(obj||{}).map(uid=>Object.assign({uid}, obj[uid]))
+    .filter(e=>e && typeof e.c==='number' && typeof e.s==='number' && e.s>0 && e.name);
+  arr.sort((x,y)=>{
+    const px=x.c/x.s, py=y.c/y.s;
+    if(py!==px) return py-px;
+    return (x.t||0)-(y.t||0);
+  });
+  return arr.slice(0,50);
+}
+async function renderLeaderboard(p){
+  const card=$('lbCard');
+  if(!LEADERBOARD_URL){
+    card.innerHTML='<div class="ahead">Leaderboard</div><div class="arow">Not configured — a shared first-attempt leaderboard can be enabled by setting LEADERBOARD_URL at the top of this file (setup steps are in the comments there).</div>';
+    card.classList.remove('hidden');
+    return;
+  }
+  card.innerHTML='<div class="ahead">Leaderboard — first attempts</div><div class="arow">Loading…</div>';
+  card.classList.remove('hidden');
+  try{
+    const data=await lbGet(p.id);
+    if(active!==p) return;               // user moved on while loading
+    const arr=lbSortEntries(data);
+    if(!arr.length){
+      card.innerHTML='<div class="ahead">Leaderboard — first attempts</div><div class="arow">No scores yet — the first attempt on this paper claims the top spot.</div>';
+      return;
+    }
+    card.innerHTML='<div class="ahead">Leaderboard — first attempts</div>'+arr.map((e,i)=>
+      '<div class="arow'+(e.uid===currentUser?' me':'')+'">'
+      +'<span class="rk">'+(i+1)+'</span>'
+      +'<span><b>'+escapeHtml(e.name)+'</b></span>'
+      +'<span class="md">'+escapeHtml(e.mode||'')+'</span>'
+      +'<span>'+fmtDate(e.t||0)+'</span>'
+      +'<span class="sc">Score <b>'+e.c+' / '+e.s+'</b> ('+Math.round(100*e.c/e.s)+'%)</span>'
+      +'</div>').join('');
+  }catch(err){
+    if(active===p) card.innerHTML='<div class="ahead">Leaderboard — first attempts</div><div class="arow">Leaderboard unreachable right now (offline, or the database URL/rules need checking). Your local results are unaffected.</div>';
+  }
+}
+
+/* ---------------- results ---------------- */
+function scaledBand(pct){
+  if(pct>=85) return '≈ 9.0 · top band (borderline)';
+  if(pct>=75) return '≈ 8.0';
+  if(pct>=65) return '≈ 7.0';
+  if(pct>=55) return '≈ 6.0';
+  if(pct>=45) return '≈ 5.0';
+  if(pct>=35) return '≈ 4.0';
+  return '≤ 3.5';
+}
+function submit(){
+  submitted=true; if(timerId) clearInterval(timerId);
+  let c=0,s=0;
+  QUESTIONS.forEach((q,i)=>{ if(q.correct===99) return; s++; if(isCorrectAns(q,answers[i])) c++; });
+  delete STATE.inprogress[active.id];
+  (STATE.results[active.id]=STATE.results[active.id]||[]).push({t:Date.now(), c, s, a:answers.slice()});
+  if(STATE.results[active.id].length>30) STATE.results[active.id]=STATE.results[active.id].slice(-30);
+  const isFirst = STATE.results[active.id].length===1;
+  persistNow();
+  $('navOver').classList.add('hidden'); showResults();
+  if(LEADERBOARD_URL && isFirst && currentUser && ROOT.profiles[currentUser]){
+    const entry={ name:ROOT.profiles[currentUser].name, c, s, t:Date.now(), mode:sessionMode, v:1 };
+    $('lbNote').textContent='Submitting your first-attempt score to the shared leaderboard…';
+    lbPut(active.id, currentUser, entry)
+      .then(()=>{ $('lbNote').textContent='First-attempt score submitted to the leaderboard as “'+ROOT.profiles[currentUser].name+'” ('+sessionMode+'). Retakes stay local.'; })
+      .catch(()=>{ $('lbNote').textContent='Could not reach the leaderboard (offline, or the database URL/rules need checking) — your result is saved locally.'; });
+  } else if(LEADERBOARD_URL && !isFirst){
+    $('lbNote').textContent='Retake — not submitted to the leaderboard (first attempts only).';
+  }
+}
+
+function showResults(){
+  let correct=0, scored=0;
+  QUESTIONS.forEach((q,i)=>{
+    if(q.correct===99) return;
+    scored++;
+    if(isCorrectAns(q,answers[i])) correct++;
+  });
+  const pct = scored ? Math.round(correct/scored*100) : 0;
+  const flawedN = QUESTIONS.filter(q=>q.flawed && q.correct===99).length;
+  $('lbNote').textContent='';
+  $('resBrand').textContent='Result · '+active.title;
+  $('rawScore').textContent=correct;
+  $('dial').querySelector('.of').textContent='/ '+scored;
+  $('pctText').textContent=pct+'% correct'+(flawedN?' · '+flawedN+' flagged item'+(flawedN>1?'s':'')+' excluded':'');
+  $('bandText').textContent=scaledBand(pct);
+  $('dial').style.setProperty('--pct', pct+'%');
+
+  const bd=$('breakdown'); bd.innerHTML='';
+  QUESTIONS.forEach((q,i)=>{
+    const a=answers[i];
+    let state, label, corr;
+    if(q.correct===99){ state='skip'; label='Flagged'; corr='—'; }
+    else {
+      const ok=isCorrectAns(q,a);
+      state = a===null ? 'skip' : (ok?'ok':'no');
+      label = a===null ? 'Skipped' : (ok?'Correct':'Incorrect');
+      corr = LETTERS[q.correct] + (q.also ? '/'+q.also.map(x=>LETTERS[x]).join('/') : '');
+    }
+    const row=document.createElement('div'); row.className='brow '+state;
+    const your=a===null?'—':LETTERS[a];
+    row.innerHTML='<span class="chip"></span><span class="qn">Q'+(i+1)+'</span>'
+      +'<span class="ans">Your answer: <b>'+your+'</b></span>'
+      +'<span class="ans">Correct: <b>'+corr+'</b></span>'
+      +'<span class="res">'+label+'</span>';
+    row.style.cursor='pointer'; row.title='Open in review';
+    row.addEventListener('click',()=>{ idx=i; enterReview(); });
+    bd.appendChild(row);
+  });
+
+  ['testMain','topbar','substrip','footbar'].forEach(id=>$(id).classList.add('hidden'));
+  $('resultScreen').classList.remove('hidden'); window.scrollTo(0,0);
+}
+
+$('reviewAnswersBtn').addEventListener('click', ()=>{ idx=0; enterReview(); });
+function enterReview(){
+  reviewMode=true;
+  $('resultScreen').classList.add('hidden');
+  ['topbar','substrip','testMain','footbar'].forEach(id=>$(id).classList.remove('hidden'));
+  const el=$('timer'); el.textContent='Review'; el.classList.remove('warn','crit');
+  render();
+}
+function backToResults(){
+  reviewMode=false;
+  ['testMain','topbar','substrip','footbar'].forEach(id=>$(id).classList.add('hidden'));
+  $('resultScreen').classList.remove('hidden'); window.scrollTo(0,0);
+}
+$('retakeBtn').addEventListener('click', ()=>{
+  delete STATE.inprogress[active.id]; persist();
+  const t=parseInt($('timeSelect').value,10);
+  noTimer=(t===0); secondsLeft=noTimer?0:t*60;
+  sessionMode = noTimer ? 'Untimed' : (t+' min');
+  $('resultScreen').classList.add('hidden'); startTest(false);
+});
+
+$('exitBtn').addEventListener('click', ()=>{
+  if(reviewMode){ backToResults(); return; }
+  STATE.inprogress[active.id]={ answers:answers.slice(), flags:flags.slice(), idx, secondsLeft, noTimer, savedAt:Date.now() };
+  persistNow();
+  toLibrary();
+});
+
+function unloadSave(){
+  if(active && currentUser && !submitted && !reviewMode && !$('testMain').classList.contains('hidden')){
+    STATE.inprogress[active.id]={ answers:answers.slice(), flags:flags.slice(), idx, secondsLeft, noTimer, mode:sessionMode, savedAt:Date.now() };
+    const s=JSON.stringify(ROOT);
+    try{ localStorage.setItem(SAVE_KEY, s); }catch(e){}
+    if(window.storage && window.storage.set){ try{ window.storage.set(SAVE_KEY, s); }catch(e){} }
+  }
+}
+window.addEventListener('beforeunload', unloadSave);
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='hidden') unloadSave(); });
+
+/* ---------------- keyboard ---------------- */
+document.addEventListener('keydown', (e)=>{
+  if(!$('loginScreen').classList.contains('hidden')) return;
+  if(!$('libraryScreen').classList.contains('hidden')) return;
+  if(!$('startScreen').classList.contains('hidden')) return;
+  if(!$('resultScreen').classList.contains('hidden')) return;
+  if(!$('navOver').classList.contains('hidden')){ if(e.key==='Escape') $('navOver').classList.add('hidden'); return; }
+  if($('testMain').classList.contains('hidden')) return;
+  const k=e.key.toLowerCase();
+  if(['a','b','c','d','e','f','g','h'].includes(k)){ const i=LETTERS.indexOf(k.toUpperCase()); if(i<QUESTIONS[idx].opts.length && !reviewMode) choose(i); }
+  else if(k>='1'&&k<='8'){ const i=parseInt(k,10)-1; if(i<QUESTIONS[idx].opts.length && !reviewMode) choose(i); }
+  else if(e.key==='ArrowRight'){ if(idx<QUESTIONS.length-1){ idx++; render(); } }
+  else if(e.key==='ArrowLeft'){ if(idx>0){ idx--; render(); } }
+  else if(k==='f'){ if(!reviewMode){ flags[idx]=!flags[idx]; render(); } }
+  else if(k==='r'){ openNav(); }
+});
+
+(async function boot(){
+  try{
+    const saved=await Store.readKey(SAVE_KEY);
+    if(saved && saved.profiles){
+      ROOT.profiles=saved.profiles||{};
+      ROOT.data=saved.data||{};
+      ROOT.lastUser=saved.lastUser||null;
+    } else {
+      const v1=await Store.readKey(OLD_KEY);
+      if(v1 && (v1.results || v1.inprogress)){
+        const id='u'+Date.now().toString(36);
+        ROOT.profiles[id]={ name:'Player 1', pin:null, created:Date.now() };
+        ROOT.data[id]={ results:v1.results||{}, inprogress:v1.inprogress||{} };
+        ROOT.lastUser=id;
+        persist();
+      }
+    }
+  }catch(e){}
+  buildLogin();
+})();
+</script>
+</body>
+</html>
