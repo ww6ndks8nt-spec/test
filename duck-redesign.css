@@ -20,16 +20,16 @@ html body.duck-redesign .modern-ui .duck-heading-copy>div{min-width:0;flex:1}
 html body.duck-redesign .modern-ui .duck-play{width:44px!important;height:44px!important;min-width:44px!important;flex:0 0 44px;padding:0!important}
 html body.duck-redesign .modern-ui .account-circles{gap:8px!important}
 html body.duck-redesign .modern-ui .account-circle{width:36px!important;height:36px!important;min-width:36px!important;border-radius:50%!important;border:1px solid var(--du-line)!important;background:var(--du-surface)!important;color:var(--du-ink)!important;font-size:16px!important;padding:0!important;box-shadow:none!important}
-html body.duck-redesign .modern-ui .account-circle:hover{background:var(--du-yellow)!important;color:#302a16!important;border-color:var(--du-yellow)!important}
+html body.duck-redesign .modern-ui .account-circle:hover{background:var(--duck-gradient)!important;color:#49380e!important;border-color:#dbad1b!important}
 html body.duck-redesign .modern-ui .account-avatar{background:var(--du-soft)!important;font-size:12px!important}
 html body.duck-redesign .modern-ui .account-popover{background:var(--du-surface)!important;border:1px solid var(--du-line)!important;border-radius:12px!important;box-shadow:var(--du-shadow)!important;color:var(--du-ink)!important}
 html body.duck-redesign .modern-ui .account-popover :is(button,span){color:var(--du-ink)!important}
 html body.duck-redesign .modern-ui .account-popover button:hover{background:var(--du-soft)!important}
 html body.duck-redesign .modern-ui .account-dropdown:not([open])>.account-popover{display:none!important}
 html body.duck-redesign :is(.modern-ui,#duckQuickFind) :is(button,input,select,textarea,a,summary):focus-visible,html body.duck-redesign #sideNav button:focus-visible{outline:3px solid #b28c10!important;outline-offset:3px!important}
-html body.duck-redesign .modern-ui :is(.bigbtn,.study-btn,.review-go){font-size:13px!important;font-weight:650!important;min-height:38px!important;padding:9px 15px!important;border:1px solid var(--du-yellow)!important;border-radius:8px!important;background:var(--du-yellow)!important;color:#322b15!important;box-shadow:none!important;transition:background .15s,border-color .15s,transform .15s}
+html body.duck-redesign .modern-ui :is(.bigbtn,.study-btn,.review-go){font-size:13px!important;font-weight:650!important;min-height:38px!important;padding:9px 15px!important;border:1px solid #dbad1b!important;border-radius:8px!important;background:var(--duck-gradient)!important;color:#49380e!important;box-shadow:none!important;transition:background .15s,border-color .15s,transform .15s}
 html body.duck-redesign .modern-ui :is(.bigbtn.ghost,.study-btn.secondary){background:var(--du-surface)!important;color:var(--du-ink)!important;border-color:var(--du-line)!important}
-html body.duck-redesign .modern-ui :is(.bigbtn,.study-btn,.review-go):hover:not(:disabled){background:#f1c534!important;border-color:#dab028!important;color:#322b15!important;transform:translateY(-1px)}
+html body.duck-redesign .modern-ui :is(.bigbtn,.study-btn,.review-go):hover:not(:disabled){background:var(--duck-gradient)!important;border-color:#ba8a00!important;color:#49380e!important;box-shadow:0 5px 18px #ba8a001a!important;transform:translateY(-1px)}
 html body.duck-redesign .modern-ui :is(button:disabled,input:disabled,select:disabled){opacity:.5!important;cursor:not-allowed!important;transform:none!important}
 html body.duck-redesign .modern-ui :is(input:not([type="checkbox"]):not([type="radio"]),select,textarea){border:1px solid var(--du-line)!important;background:var(--du-surface)!important;color:var(--du-ink)!important;border-radius:8px!important;font-size:13px!important;min-height:40px;padding:10px 12px!important;box-shadow:none!important}
 html body.duck-redesign .modern-ui :is(label,legend,.study-field){color:var(--du-muted)!important;font-size:12px!important;font-weight:550}
@@ -67,20 +67,20 @@ html body.duck-redesign.nav-collapsed #sideNav .side-nav-item{justify-content:ce
 html body.duck-redesign.nav-collapsed #sideNav .du-nav-search{justify-content:center}
 
 /* Small, actionable dashboard. */
-html body.duck-redesign #dashboardScreen .du-welcome{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:24px;margin-bottom:24px;padding:25px 28px;background:linear-gradient(115deg,#f8df7a,#f5cd48);border-radius:14px;color:#403514}
+html body.duck-redesign #dashboardScreen .du-welcome{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:24px;margin-bottom:24px;padding:25px 28px;background:var(--duck-gradient);border-radius:14px;color:#403514}
 html body.duck-redesign #dashboardScreen .du-welcome :is(h2,p,b){color:#403514!important}
 html body.duck-redesign #dashboardScreen .du-welcome h2{font-size:24px!important;letter-spacing:-.8px!important;margin:0 0 6px!important}
 html body.duck-redesign #dashboardScreen .du-welcome p{font-size:13px!important;margin:0!important;max-width:520px}
-html body.duck-redesign #dashboardScreen .du-welcome .bigbtn{background:#fff9e5!important;border-color:#fff9e5!important;color:#443514!important}
-html body.duck-redesign #dashboardScreen .du-welcome .bigbtn:hover{background:#fff!important}
+html body.duck-redesign #dashboardScreen .du-welcome .bigbtn{background:var(--duck-gradient)!important;border-color:#a47b15!important;color:#49380e!important}
+html body.duck-redesign #dashboardScreen .du-welcome .bigbtn:hover{background:var(--duck-gradient)!important;border-color:#78590f!important}
 html body.duck-redesign #dashboardScreen .dash-stats{display:grid!important;grid-template-columns:repeat(3,1fr)!important;gap:16px!important;border:0!important;background:transparent!important;box-shadow:none!important;margin:0 0 22px!important;padding:0!important}
 html body.duck-redesign #dashboardScreen .dash-stat{padding:18px 22px!important;border:1px solid var(--du-line)!important;background:var(--du-surface)!important;border-radius:12px!important;display:flex;flex-direction:column-reverse;gap:6px;text-align:left!important}
 html body.duck-redesign #dashboardScreen .dash-stat .v{font-size:27px!important;color:var(--du-ink)!important;font-weight:650!important;letter-spacing:-1px}
 html body.duck-redesign #dashboardScreen .dash-stat .l{font-size:12px!important;color:var(--du-muted)!important}
 html body.duck-redesign #dashboardScreen .studio-dashboard-grid{display:grid!important;grid-template-columns:minmax(240px,.75fr) minmax(0,1.45fr)!important;gap:18px!important;margin-bottom:0!important}
 html body.duck-redesign #dashboardScreen :is(.dash-panel,.mastery-card,.studio-benchmarks,.dash-split-card,.du-next){background:var(--du-surface)!important;border:1px solid var(--du-line)!important;border-radius:12px!important;box-shadow:none!important;padding:22px!important;color:var(--du-ink)!important}
-html body.duck-redesign #dashboardScreen .mastery-card{background:var(--du-yellow-soft)!important;min-height:260px;overflow:hidden}
-html body.duck-redesign #dashboardScreen .mastery-card :is(.mastery-kicker,.mastery-range,.mastery-sub,.mastery-number,.legend-chip,.mastery-ticks,b){color:var(--du-yellow-ink)!important}
+html body.duck-redesign #dashboardScreen .mastery-card{background:var(--duck-gradient)!important;min-height:260px;overflow:hidden}
+html body.duck-redesign #dashboardScreen .mastery-card :is(.mastery-kicker,.mastery-range,.mastery-sub,.mastery-number,.legend-chip,.mastery-ticks,b){color:#49380e!important}
 html body.duck-redesign #dashboardScreen .mastery-kicker{font-size:12px!important;font-weight:650!important;text-transform:none!important;letter-spacing:0!important}
 html body.duck-redesign #dashboardScreen .mastery-number{font-size:54px!important;font-weight:650!important;letter-spacing:-2px!important;line-height:1.15!important}
 html body.duck-redesign #dashboardScreen .mastery-row{align-items:baseline!important;gap:14px!important;margin:18px 0 8px!important}
@@ -130,7 +130,7 @@ html body.duck-redesign #libraryScreen .du-paper-filters label{display:flex;flex
 html body.duck-redesign #libraryScreen .du-paper-filters :is(input,select){width:100%!important;min-width:0!important;box-sizing:border-box}
 html body.duck-redesign #libraryScreen .du-collection-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:16px 0 10px}
 html body.duck-redesign #libraryScreen .du-collection-tab{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;width:auto;min-width:0;min-height:33px;border:1px solid var(--du-line);border-radius:7px;background:var(--du-surface);color:var(--du-muted);padding:7px 12px;font-size:12px;line-height:1.3;cursor:pointer}
-html body.duck-redesign #libraryScreen .du-collection-tab[aria-pressed="true"]{background:var(--du-yellow-soft)!important;border-color:#c7af54!important;color:var(--du-yellow-ink)!important;font-weight:650}
+html body.duck-redesign #libraryScreen .du-collection-tab[aria-pressed="true"]{background:var(--duck-gradient)!important;border-color:#dbad1b!important;color:#49380e!important;font-weight:650}
 html body.duck-redesign #libraryScreen .du-filter-bottom{display:flex;align-items:center;justify-content:space-between;gap:10px;color:var(--du-muted);font-size:11px}
 html body.duck-redesign #libraryScreen .du-filter-bottom button{border:0;background:transparent;color:var(--du-yellow-ink);text-decoration:underline;cursor:pointer;font:inherit}
 html body.duck-redesign #libraryScreen .studio-collection{background:var(--du-surface)!important;border:1px solid var(--du-line)!important;border-radius:12px!important;box-shadow:none!important;margin:0 0 16px!important;overflow:hidden}
@@ -152,7 +152,7 @@ html body.duck-redesign #libraryScreen .paper.compact-paper[hidden]{display:none
 html body.duck-redesign #libraryScreen .paper.compact-paper .pn{font-size:13px!important;font-weight:650!important;line-height:1.45!important;color:var(--du-ink)!important;letter-spacing:-.1px!important;padding-right:16px}
 html body.duck-redesign #libraryScreen .paper.compact-paper .meta{display:flex!important;align-items:center;gap:12px!important;border:0!important;padding:0!important;margin:0!important;font-size:10px!important;color:var(--du-muted)!important;flex-wrap:wrap}
 html body.duck-redesign #libraryScreen .paper.compact-paper::after{content:'↗';position:absolute;right:10px;top:14px;font-size:14px;color:var(--du-muted)}
-html body.duck-redesign #libraryScreen .paper.compact-paper:hover:not(:disabled),html body.duck-redesign #libraryScreen .paper.compact-paper:focus-visible{background:linear-gradient(105deg,#ffe99a,#f4cf49)!important;border-radius:8px!important}
+html body.duck-redesign #libraryScreen .paper.compact-paper:hover:not(:disabled),html body.duck-redesign #libraryScreen .paper.compact-paper:focus-visible{background:var(--duck-gradient)!important;border-radius:8px!important;box-shadow:0 5px 18px #ba8a001a!important}
 html body.duck-redesign #libraryScreen .paper.compact-paper:is(:hover,:focus-visible):not(:disabled) :is(.pn,.meta,.meta span),html body.duck-redesign #libraryScreen .paper.compact-paper:hover::after{color:#433613!important}
 html body.duck-redesign #libraryScreen .libnote{font-size:11px!important;line-height:1.75!important;background:transparent!important;border:0!important;margin:14px 0!important;padding:0!important;color:var(--du-muted)!important}
 html body.duck-redesign #libraryScreen #cloudDescription{border-top:1px solid var(--du-line)!important;padding-top:18px!important;margin-top:28px!important}
@@ -167,7 +167,7 @@ html body.duck-redesign .modern-ui .study-filters{gap:14px!important;margin:18px
 html body.duck-redesign #bankScreen .study-filters{grid-template-columns:repeat(3,minmax(0,1fr))!important}
 html body.duck-redesign .modern-ui .study-stem{font-size:17px!important;line-height:1.85!important;color:var(--du-ink)!important}
 html body.duck-redesign #reviewHubScreen .review-paper{margin-bottom:22px!important;border:1px solid var(--du-line)!important;border-radius:12px!important;overflow:hidden;background:var(--du-surface)!important}
-html body.duck-redesign #reviewHubScreen .review-paper-head{background:linear-gradient(100deg,#fae59a,#f5d45f)!important;padding:20px 22px!important;color:#463913!important}
+html body.duck-redesign #reviewHubScreen .review-paper-head{background:var(--duck-gradient)!important;padding:20px 22px!important;color:#463913!important}
 html body.duck-redesign #reviewHubScreen .review-paper-head :is(.review-paper-title,.review-paper-sub,.review-paper-stat,b){color:#463913!important}
 html body.duck-redesign #reviewHubScreen .review-paper-title{font-size:15px!important;line-height:1.5!important}
 html body.duck-redesign #reviewHubScreen :is(.review-paper-sub,.review-paper-stat){font-size:11px!important}
@@ -210,7 +210,7 @@ html body.duck-redesign #startScreen :is(.spec b,.spec span,.spec label,.spec .k
 html body.duck-redesign #startScreen :is(#stdInstructions,#companionInstructions,.ahead,.leaderboard-head){background:var(--du-soft)!important;border-color:var(--du-line)!important;color:var(--du-ink)!important}
 html body.duck-redesign #startScreen :is(.attempt-hist,.arow,.leaderboard-row,.leaderboard,.lb-row,.lb-head){background:var(--du-surface)!important;border-color:var(--du-line)!important;color:var(--du-ink)!important}
 html body.duck-redesign #startScreen :is(.rank,.lb-rank,.sc,#startBrand){color:var(--du-ink)!important}
-html body.duck-redesign #resultScreen .scorehead{background:linear-gradient(110deg,#f9df78,#f4cc43)!important;border-radius:12px!important;box-shadow:none!important}
+html body.duck-redesign #resultScreen .scorehead{background:var(--duck-gradient)!important;border-radius:12px!important;box-shadow:none!important}
 html body.duck-redesign #resultScreen .scorehead :is(div,span,b,p,h2,button){color:#423513!important;background-color:transparent!important}
 html body.duck-redesign #resultScreen :is(.result-eyebrow,.result-row,.breakdown,.ans-row){color:var(--du-ink)!important;background:var(--du-surface)!important;border-color:var(--du-line)!important}
 
@@ -258,8 +258,8 @@ html body.duck-redesign #modernReviewScreen #modernReviewNavigator{grid-template
 html body.duck-redesign #modernReviewScreen .modern-review-jump{width:100%!important;min-width:0!important;max-width:100%!important;box-sizing:border-box}
 html body.duck-redesign #modernReviewScreen .modern-review-heading{display:flex;gap:15px;align-items:center}
 html body.duck-redesign #modernReviewScreen .modern-review-heading h2{white-space:nowrap;flex:1;min-width:0}
-html body.duck-redesign #dashboardScreen .mastery-ticks span{color:var(--du-yellow-ink)!important}
-html body.duck-redesign #dashboardScreen :is(.mastery-est,.legend-est){background:var(--du-yellow-ink)!important}
+html body.duck-redesign #dashboardScreen .mastery-ticks span{color:#49380e!important}
+html body.duck-redesign #dashboardScreen :is(.mastery-est,.legend-est){background:#49380e!important}
 html body.duck-redesign #dashboardScreen :is(.mastery-ci,.legend-range){background:#c5a536!important}
 html body.duck-redesign #sideNav .side-nav-icon{color:inherit!important}
 @media(max-width:600px){html body.duck-redesign #modernReviewScreen #modernReviewNavigator{grid-template-columns:repeat(8,minmax(0,1fr))!important}}
