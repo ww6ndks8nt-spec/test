@@ -163,12 +163,26 @@ html body.duck-redesign :is(#bankScreen,#bookmarksScreen,#journalScreen,#planner
 html body.duck-redesign .modern-ui .study-list-row{margin:0 0 12px!important;gap:20px!important}
 html body.duck-redesign .modern-ui .study-list-row p{font-size:12px!important;line-height:1.65!important}
 html body.duck-redesign .modern-ui .study-list-row .study-row-body>b{font-size:14px!important}
+html body.duck-redesign #bankScreen #bankList .bank-question-row{display:grid!important;grid-template-columns:18px minmax(0,1fr) auto;align-items:center!important;gap:12px!important;padding:11px 15px!important;margin-bottom:8px!important;min-height:0!important;border-radius:9px!important;transition:background .15s,border-color .15s}
+html body.duck-redesign #bankScreen #bankList .bank-question-row .study-row-body{min-width:0!important}
+html body.duck-redesign #bankScreen #bankList .bank-question-row .study-row-body>b{font-size:13px!important;line-height:1.45!important}
+html body.duck-redesign #bankScreen #bankList .bank-question-row .study-muted{margin:3px 0 0!important;font-size:11px!important;line-height:1.5!important;overflow-wrap:anywhere}
+html body.duck-redesign #bankScreen #bankList .bank-question-row input[type="checkbox"]{width:16px!important;height:16px!important;min-width:16px!important;min-height:16px!important;margin:0!important;padding:0!important;accent-color:#9b7400}
+html body.duck-redesign #bankScreen #bankList .bank-question-row>.bigbtn{width:auto!important;min-width:0!important;min-height:30px!important;padding:5px 11px!important;font-size:12px!important;border-radius:6px!important}
+html body.duck-redesign #bankScreen #bankList .bank-question-row:is(:hover,:focus-within){background:var(--duck-gradient)!important;border-color:#dbad1b!important}
+html body.duck-redesign #bankScreen #bankList .bank-question-row:is(:hover,:focus-within) :is(.study-row-body,b,p,.bigbtn){color:#49380e!important}
+html body.duck-redesign #bankScreen #bankList .bank-question-row:is(:hover,:focus-within)>.bigbtn{background:transparent!important;border-color:#9a791c!important}
+html body.duck-redesign .modern-ui a.official-solution-link{background:var(--duck-gradient)!important;color:#49380e!important;border:1px solid #b38b16!important}
+html body.duck-redesign .modern-ui a.official-solution-link:is(:visited,:hover,:focus-visible){color:#49380e!important}
 html body.duck-redesign .modern-ui .study-filters{gap:14px!important;margin:18px 0!important}
 html body.duck-redesign #bankScreen .study-filters{grid-template-columns:repeat(3,minmax(0,1fr))!important}
 html body.duck-redesign .modern-ui .study-stem{font-size:17px!important;line-height:1.85!important;color:var(--du-ink)!important}
 html body.duck-redesign #reviewHubScreen .review-paper{margin-bottom:22px!important;border:1px solid var(--du-line)!important;border-radius:12px!important;overflow:hidden;background:var(--du-surface)!important}
 html body.duck-redesign #reviewHubScreen .review-paper-head{background:var(--duck-gradient)!important;padding:20px 22px!important;color:#463913!important}
 html body.duck-redesign #reviewHubScreen .review-paper-head :is(.review-paper-title,.review-paper-sub,.review-paper-stat,b){color:#463913!important}
+html body.duck-redesign #reviewHubScreen .review-paper-head .official-solution-link{background:transparent!important;border:1px solid #9a791c!important;color:#463913!important}
+html body.duck-redesign #reviewHubScreen .review-paper-head .official-solution-link:hover{background:#fff3ad!important;color:#463913!important}
+html[data-duck-theme="dark"] body.duck-redesign #wrongHubScreen #wrongBuilder :is(div,span,label,p,b){color:var(--du-ink)!important}
 html body.duck-redesign #reviewHubScreen .review-paper-title{font-size:15px!important;line-height:1.5!important}
 html body.duck-redesign #reviewHubScreen :is(.review-paper-sub,.review-paper-stat){font-size:11px!important}
 html body.duck-redesign #reviewHubScreen .review-attempt{background:var(--du-surface)!important;border-color:var(--du-line)!important;padding:16px 22px!important;gap:20px!important;min-height:0!important}
@@ -177,8 +191,10 @@ html body.duck-redesign #modernReviewScreen .modern-review-layout{grid-template-
 html body.duck-redesign #modernReviewScreen .modern-review-sidebar{padding:18px!important;position:sticky;top:0;align-self:start}
 html body.duck-redesign #modernReviewScreen .modern-review-sidebar h2{font-size:15px!important}
 html body.duck-redesign #modernReviewScreen .modern-review-sidebar p{font-size:11px!important}
-html body.duck-redesign #modernReviewScreen #modernReviewNavigator{gap:6px!important}
-html body.duck-redesign #modernReviewScreen .modern-review-jump{border-radius:7px!important;font-size:11px!important;min-height:33px!important;padding:6px 3px!important;border:1px solid var(--du-line)!important;background:var(--du-soft)!important;color:var(--du-ink)!important}
+html body.duck-redesign #modernReviewScreen #modernReviewNavigator{display:block!important;max-height:55vh!important}
+html body.duck-redesign #modernReviewScreen .modern-review-question-group{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+html body.duck-redesign #modernReviewScreen .modern-review-question-group+.modern-review-question-group{border-top:1px solid var(--du-line);margin-top:13px;padding-top:13px}
+html body.duck-redesign #modernReviewScreen .modern-review-jump{border-radius:7px!important;font-size:12px!important;min-height:32px!important;line-height:1.2!important;white-space:nowrap!important;padding:6px 3px!important;border:1px solid var(--du-line)!important;background:var(--du-soft)!important;color:var(--du-ink)!important}
 html body.duck-redesign #modernReviewScreen .modern-review-jump.correct{background:var(--du-green-bg)!important;color:var(--du-green)!important;border-color:#62906c!important}
 html body.duck-redesign #modernReviewScreen .modern-review-jump.incorrect{background:var(--du-red-bg)!important;color:var(--du-red)!important;border-color:#c8786f!important}
 html body.duck-redesign #modernReviewScreen .modern-review-jump.current{outline:2px solid #b39116!important;outline-offset:2px}
@@ -262,5 +278,5 @@ html body.duck-redesign #dashboardScreen .mastery-ticks span{color:#49380e!impor
 html body.duck-redesign #dashboardScreen :is(.mastery-est,.legend-est){background:#49380e!important}
 html body.duck-redesign #dashboardScreen :is(.mastery-ci,.legend-range){background:#c5a536!important}
 html body.duck-redesign #sideNav .side-nav-icon{color:inherit!important}
-@media(max-width:600px){html body.duck-redesign #modernReviewScreen #modernReviewNavigator{grid-template-columns:repeat(8,minmax(0,1fr))!important}}
+@media(max-width:600px){html body.duck-redesign #modernReviewScreen .modern-review-question-group{grid-template-columns:repeat(5,minmax(0,1fr))}}
 @media(max-width:420px){html body.duck-redesign #libraryScreen .du-paper-filters label{flex:1 1 100%;width:100%}html body.duck-redesign .modern-ui .account-circles{justify-self:end}html body.duck-redesign .modern-ui .studio-heading .duck-heading-copy{gap:8px!important}html body.duck-redesign #dashboardScreen .mastery-range{font-size:10px!important}}

@@ -2432,7 +2432,7 @@ html[data-duck-theme="dark"] #profileSettings{background:#24241f!important;borde
 html[data-duck-theme="dark"] #profileSettings :is(fieldset,.settings-tools){border-color:#625d4c!important}
 html[data-duck-theme="dark"] #profileSettings::backdrop{background:#000a}
 html[data-duck-theme="dark"] #profileSettings .settings-danger{background:#482b28!important;color:#ffbbb0!important;border-color:#94584e!important}
-html[data-duck-theme="dark"] .modern-ui .official-solution-link{background:#443a1e!important;border-color:#897338!important;color:#ffe18a!important}
+html[data-duck-theme="dark"] .modern-ui .official-solution-link{background:linear-gradient(135deg,#ffdc50,#ffc629)!important;border:1px solid #b38b16!important;color:#49380e!important}
 html[data-duck-theme="dark"] .modern-ui .official-solution-link:hover{background:#ffd43b!important;color:#352a12!important}
 html[data-duck-theme="dark"] .modern-ui :is(.modern-review-option.correct,.modern-review-jump.correct,.modern-review-status.correct){background:#203d2c!important;border-color:#608669!important;color:#b6edc2!important}
 html[data-duck-theme="dark"] .modern-ui :is(.modern-review-option.incorrect,.modern-review-jump.incorrect,.modern-review-status.incorrect){background:#482b28!important;border-color:#a16057!important;color:#ffb9ae!important}
@@ -2549,7 +2549,7 @@ html[data-duck-theme="dark"] #reviewHubScreen .review-paper-head *{color:#49380e
 html[data-duck-theme="dark"] #reviewHubScreen .review-attempt,
 html[data-duck-theme="dark"] #reviewHubScreen .review-attempt :is(.date,.score,.unavailable){color:#fff!important}
 </style>
-<link rel="stylesheet" href="duck-redesign.css?v=20260913-2">
+<link rel="stylesheet" href="duck-redesign.css?v=20260913-4">
 </head>
 <body class="duck-redesign">
 
@@ -5731,11 +5731,11 @@ function buildStudyBank(){
  $('bankPrev').disabled=studyPage===0;$('bankNext').disabled=studyPage===pages-1;$('bankStart').disabled=!studySelected.size;
  if(!all.length)studyEmpty(host,'No questions match these filters.');
  all.slice(studyPage*24,(studyPage+1)*24).forEach(x=>{
- const row=document.createElement('article');row.className='study-list-row';
+ const row=document.createElement('article');row.className='study-list-row bank-question-row';
  const check=document.createElement('input');check.type='checkbox';check.checked=studySelected.has(x.key);check.setAttribute('aria-label','Select '+studyKeyTitle(x));check.addEventListener('change',()=>{if(check.checked)studySelected.add(x.key);else studySelected.delete(x.key);$('bankCount').textContent=all.length+' questions · '+studySelected.size+' selected';$('bankStart').disabled=!studySelected.size;});
- const body=document.createElement('div');body.className='study-row-body';const title=document.createElement('b');title.textContent=studyKeyTitle(x);const meta=document.createElement('p');meta.className='study-muted';meta.textContent=studyMeta(x,h);const preview=document.createElement('div');preview.className='study-excerpt';preview.innerHTML=richMathHtml(x.q.stem||'');body.append(title,meta,preview);
+ const body=document.createElement('div');body.className='study-row-body';const title=document.createElement('b');title.textContent=studyKeyTitle(x);const meta=document.createElement('p');meta.className='study-muted';meta.textContent=studyMeta(x,h);body.append(title,meta);
  row.append(check,body,studyButton('Open',()=>startStudySession([x.key])));host.appendChild(row);
- });studyMath(host);
+ });
  const resume=$('bankResume');resume.innerHTML='';studyData().sessions.filter(s=>!s.finished).slice(-5).reverse().forEach(s=>resume.appendChild(studyButton('Resume '+s.keys.length+' questions · '+new Date(s.started).toLocaleDateString(),()=>resumeStudySession(s.id))));
 }
 function startStudySession(keys){
@@ -5899,7 +5899,17 @@ function modernReviewList(){
  const mode=$('modernReviewFilter').value;
  modernReviewIndices=QUESTIONS.map((_,i)=>i).filter(i=>!mode||modernReviewStatus(i)===mode);
  const host=$('modernReviewNavigator');host.innerHTML='';
- modernReviewIndices.forEach(i=>{const status=modernReviewStatus(i),source=modernReviewSource(i);const b=document.createElement('button');b.type='button';b.className='modern-review-jump '+status+(i===idx?' current':'');b.textContent=active.combined?((source.id===active.p1Id?'P1':'P2')+' · '+(source.index+1)):String(i+1);b.title='Question '+(i+1)+' · '+modernReviewLabel(status);b.setAttribute('aria-label',b.title);if(i===idx)b.setAttribute('aria-current','true');b.addEventListener('click',()=>{idx=i;renderModernReview();});host.appendChild(b);});
+ const groups=new Map();
+ modernReviewIndices.forEach(i=>{
+  const status=modernReviewStatus(i),source=modernReviewSource(i),paper=active.combined?(source.id===active.p1Id?1:2):0;
+  let group=groups.get(paper);
+  if(!group){group=document.createElement('div');group.className='modern-review-question-group';group.setAttribute('role','group');group.setAttribute('aria-label',paper?'Paper '+paper+' questions':'Questions');group.dataset.paper=String(paper);groups.set(paper,group);host.appendChild(group);}
+  const number=active.combined?source.index+1:i+1,b=document.createElement('button');
+  b.type='button';b.className='modern-review-jump '+status+(i===idx?' current':'');b.textContent=String(number);
+  b.title=(paper?'Paper '+paper+' · ':'')+'Question '+number+' · '+modernReviewLabel(status);b.setAttribute('aria-label',b.title);
+  if(i===idx)b.setAttribute('aria-current','true');
+  b.addEventListener('click',()=>{idx=i;renderModernReview();});group.appendChild(b);
+ });
  $('modernReviewFilterCount').textContent=modernReviewIndices.length+' of '+QUESTIONS.length+' questions';
  if(!modernReviewIndices.length){const p=document.createElement('p');p.className='study-muted';p.textContent='No questions match this filter.';host.appendChild(p);}
 }
