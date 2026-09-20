@@ -21,16 +21,16 @@
  [['grid4','ENGAA','Sections 1 and 2 · 2016–2023','01'],['gridMAT','NSAA','Section 1: 2016–2023 · Section 2: 2020–2023','02']].forEach(([id,name,sub,num])=>{
   const c=$(id).closest('.studio-collection');c.querySelector('.collection-name').innerHTML=name+'<small>'+sub+'</small>';c.querySelector('.collection-num').textContent=num;
  });
- $('timeSelect').innerHTML='<option value="75">Historical paper timing</option><option value="0">Untimed</option>';
+ $('timeSelect').innerHTML='<option value="75">Paper timing</option><option value="0">Untimed</option>';
  $('timeSelect').value='75';
- $('settingsDuration').innerHTML='<option value="75">Historical paper timing</option><option value="0">Untimed</option>';
+ $('settingsDuration').innerHTML='<option value="75">Paper timing</option><option value="0">Untimed</option>';
  $('settingsDuration').value='75';
  $('duPaperSearch').placeholder='Try 2023, Physics or Chemistry…';
  $('duPaperType').innerHTML='<option value="">All sections</option><option value="1">Section 1</option><option value="2">Section 2</option>';
  $('bankEstimatedDifficulty').closest('label').hidden=true;
  $('downloadDifficulties').hidden=true;
  const info=doc.createElement('p');info.className='esat-archive-note';
- info.innerHTML='Historical papers are additional practice, not current ESAT mocks. Some advanced topics fall outside today’s specification. NSAA subject parts are offered separately; older ENGAA Section 2 written reasoning is not marked. <a href="https://esat-tmua.ac.uk/esat-preparation-materials/" target="_blank" rel="noopener noreferrer">Official preparation guidance ↗</a>';
+ info.innerHTML='Crossed-out questions are excluded from practice and the affected timers are reduced proportionally. The source PDFs retain their original annotations. Unannotated historical papers may still contain advanced topics outside today’s specification. ENGAA Section 1 Parts A and B are combined into one sitting per year. NSAA subject parts are offered separately; older ENGAA Section 2 written reasoning is not marked. <a href="https://esat-tmua.ac.uk/esat-preparation-materials/" target="_blank" rel="noopener noreferrer">Official preparation guidance ↗</a>';
  $('libraryScreen').querySelector('.lead').after(info);
  // Historical raw accuracy has no invented 1–9 conversion.
  dashboardAttemptGrade=(c,s)=>s?100*c/s:null;
@@ -56,7 +56,18 @@
  buildDashboard=function(){dashboard();$('dashRecent').querySelectorAll('.recent-head > div').forEach(el=>{if(el.textContent==='Equivalent')el.textContent='Accuracy';});};
  beginExamIntroFlow=()=>beginPaperAfterInstructions();
  const start=openStart;
- openStart=function(p){start(p);if(!p.esat)return;
+ openStart=function(p){
+  if(p.replacementId)p=paperById(p.replacementId);
+  // Only map an unfinished original sitting when no newer work exists.
+  const old=p.legacyId&&STATE.inprogress[p.legacyId],original=p.legacyId&&paperById(p.legacyId);
+  if(old&&original&&!STATE.inprogress[p.id]&&!STATE.results[p.id]?.length&&old.answers?.length===original.questions.length){
+   const indices=p.questions.map(q=>original.questions.findIndex(x=>x.sourceNumber===q.sourceNumber));
+   const take=(arr,fallback)=>indices.map(i=>arr?.[i]??fallback);
+   const mappedIdx=indices.findIndex(i=>i>=old.idx);
+   STATE.inprogress[p.id]={...old,answers:take(old.answers,null),flags:take(old.flags,false),seen:take(old.seen,false),questionTimesMs:take(old.questionTimesMs,0),idx:mappedIdx<0?indices.length-1:mappedIdx,secondsLeft:old.noTimer?0:Math.max(1,Math.min(p.timerSeconds,Math.round(old.secondsLeft*p.questions.length/original.questions.length))),savedAt:Date.now()};
+   delete STATE.inprogress[p.legacyId];persistNow();
+  }
+  start(p);if(!p.esat)return;
   $('startTime').textContent=selectedTimeMinutesForPaper(p)===0?'Untimed':formatDurationCompact(p.timerSeconds)+' (historical practice timing)';
   const calc=[...doc.querySelectorAll('#startScreen .spec')].find(el=>el.querySelector('.k')?.textContent==='Calculator');
   if(calc)calc.querySelector('.v').textContent=p.calculator?'Permitted in this historical paper':'Not permitted';
