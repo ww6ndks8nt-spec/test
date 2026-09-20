@@ -9,7 +9,7 @@
 <meta property="og:description" content="Practise TMUA papers, review every attempt and track your progress across devices.">
 <meta property="og:url" content="https://ducktmua.com/">
 <meta property="og:type" content="website">
-<meta name="ducktmua-build" content="2026-09-12.2">
+<meta name="ducktmua-build" content="2026-09-20.pearson-1">
 <script id="duck-appearance-bootstrap">
 try{document.documentElement.dataset.duckTheme=localStorage.getItem('ducktmua-appearance')==='dark'?'dark':'light';}catch(e){document.documentElement.dataset.duckTheme='light';}
 </script>
@@ -2761,11 +2761,11 @@ html[data-duck-theme="dark"] #reviewHubScreen .review-attempt :is(.date,.score,.
     <div class="pre-scheme">
       <label for="preColorSchemeSelect">Colour scheme</label>
       <select id="preColorSchemeSelect" aria-label="Colour scheme">
-        <option value="standard">Standard</option>
-        <option value="white">White</option>
-        <option value="blue">Light Blue</option>
-        <option value="sepia">Sepia</option>
-        <option value="contrast">High Contrast</option>
+        <option value="standard">Color Scheme</option>
+        <option value="light-yellow">Black on Light Yellow</option>
+        <option value="salmon">Black on Salmon</option>
+        <option value="white">Black on White</option>
+        <option value="yellow">Black on Yellow</option>
       </select>
     </div>
   </div>
@@ -2804,7 +2804,7 @@ html[data-duck-theme="dark"] #reviewHubScreen .review-attempt :is(.date,.score,.
       <li>Select the <b>one</b> correct option for each question. There is no penalty for a wrong answer, so <b>attempt every question</b>.</li>
       <li>Tick <b>Flag for review</b> to mark a question to return to. Open the <b>Review Screen</b> at any time to see the status of every question and jump between them.</li>
       <li>The timer runs continuously. When it reaches zero the paper is <b>submitted automatically</b>.</li>
-      <li>Keyboard: letter keys <b>A–J</b> or number keys <b>1–9/0</b> to answer · <b>← →</b> to move · <b>F</b> to flag · <b>R</b> for the Review Screen.</li>
+      <li>Keyboard: <b>A–J</b> or <b>1–9/0</b> to answer · <b>← →</b> to move · <b>Alt+F</b> to flag · <b>R</b> for the Navigator.</li>
     </ul>
 
     <div class="attempts hidden" id="attemptHist"></div>
@@ -2850,20 +2850,20 @@ html[data-duck-theme="dark"] #reviewHubScreen .review-attempt :is(.date,.score,.
   <div class="title">Test of Mathematics for University Admission<small id="barSub">Practice simulation</small></div>
   <div class="spacer"></div>
   <div class="timewrap" id="timeWrap"><span class="lbl">Time Remaining</span><span class="timer" id="timer">1:15:00</span></div>
-  <div class="qcount" id="topQCount">1 of 20</div>
+  <button type="button" class="qcount" id="topQCount" aria-pressed="true" title="Hide question count">1 of 20</button>
 </header>
 
 <div class="substrip hidden" id="substrip">
-  <span class="sub-left"></span>
+  <button type="button" class="sub-left hidden" id="explainAnswerBtn" aria-controls="solution" aria-expanded="true">Explain Answer</button>
   <span class="hidden" aria-hidden="true"><b id="progNow">1</b><b id="progTot">20</b></span>
   <span class="spacer"></span>
-  <label class="flagwrap" id="flagWrap"><input type="checkbox" id="flagChk"><span class="flg" id="flagIcon">&#9872;</span> Flag for Review</label>
+  <label class="flagwrap" id="flagWrap" title="Flag for Review (Alt+F)"><input type="checkbox" id="flagChk"><span class="flg" id="flagIcon" aria-hidden="true"></span><span><u>F</u>lag for Review</span></label>
   <div class="scheme-wrap"><label for="colorSchemeSelect">Colour scheme</label><select id="colorSchemeSelect" aria-label="Colour scheme">
-    <option value="standard">Standard</option>
-    <option value="white">White</option>
-    <option value="blue">Light Blue</option>
-    <option value="sepia">Sepia</option>
-    <option value="contrast">High Contrast</option>
+    <option value="standard">Color Scheme</option>
+    <option value="light-yellow">Black on Light Yellow</option>
+    <option value="salmon">Black on Salmon</option>
+    <option value="white">Black on White</option>
+    <option value="yellow">Black on Yellow</option>
   </select><span class="scheme-caret">&#9660;</span></div>
 </div>
 
@@ -2871,26 +2871,26 @@ html[data-duck-theme="dark"] #reviewHubScreen .review-attempt :is(.date,.score,.
   <div class="wrap">
     <div class="stem" id="stem"></div>
     <div class="question-topic hidden" id="questionTopic"></div>
-    <div class="options" id="options"></div>
+    <div class="options" id="options" role="radiogroup" aria-label="Answer choices"></div>
     <div class="solution hidden" id="solution"></div>
   </div>
 </main>
 
 <footer class="actions hidden" id="footbar">
-  <button class="pvbtn ghost" id="exitBtn">&#10534; End Exam</button>
+  <button type="button" class="pvbtn ghost" id="exitBtn" title="End Exam (Alt+E)">&#10534; End Exam</button>
   <div class="spacer"></div>
-  <button class="pvbtn" id="prevBtn">&#8592; Previous</button>
-  <button class="pvbtn" id="reviewBtn">&#9881; Navigator</button>
-  <button class="pvbtn" id="nextBtn">Next &#8594;</button>
+  <button type="button" class="pvbtn" id="prevBtn" title="Previous (Alt+P)">&#8592; Previous</button>
+  <button type="button" class="pvbtn" id="reviewBtn" aria-haspopup="dialog" aria-controls="navOver" title="Navigator (Alt+V)">&#9881; Navigator</button>
+  <button type="button" class="pvbtn" id="nextBtn" title="Next (Alt+N)">Next &#8594;</button>
 </footer>
 
 <!-- ============ FLOATING NAVIGATOR ============ -->
 <div class="navigator-shell hidden" id="navOver">
-  <section class="navigator-window" id="navWindow" aria-label="Navigator">
+  <section class="navigator-window" id="navWindow" role="dialog" aria-modal="true" aria-label="Navigator">
     <div class="navigator-title" id="navDragHandle"><span class="navgear">&#9881;</span> Navigator - select a question to go to it</div>
     <div class="navigator-table-wrap">
       <table class="navtable official-navtable">
-        <thead><tr><th style="width:31%">Question # <span class="sortarrow">&#9650;</span></th><th style="width:21%">Status</th><th>Flagged for Review</th></tr></thead>
+        <thead><tr><th style="width:31%" aria-sort="ascending"><button type="button" data-nav-sort="question">Question # <span class="sortarrow">&#9650;</span></button></th><th style="width:20.6%"><button type="button" data-nav-sort="status">Status</button></th><th><button type="button" data-nav-sort="flag">Flagged for Review</button></th></tr></thead>
         <tbody id="navTable"></tbody>
       </table>
     </div>
@@ -4876,7 +4876,8 @@ $('sideNavToggle').addEventListener('click', ()=>{
 
 
 function applyExamScheme(v){
-  const allowed=['standard','white','blue','sepia','contrast'];
+  const allowed=['standard','light-yellow','salmon','white','yellow'];
+  // Previously saved, non-reference themes fall back safely to the default.
   const scheme=allowed.includes(v)?v:'standard';
   document.body.dataset.examScheme=scheme;
   try{ localStorage.setItem('tmua-exam-scheme',scheme); }catch(e){}
@@ -5160,122 +5161,144 @@ function updateTimerDisplay(){
   el.classList.toggle('crit', secondsLeft<=60);
 }
 
-/* ---------------- render ---------------- */
+/* ---------------- reference-calibrated exam delivery ---------------- */
+let examQuestionCountVisible=true;
+function examIcon(name){
+  const paths={
+    flag:'<path class="flag-fill" d="M4 21 7 5c3-5 8 4 12-1l-3 12c-4 5-8-3-11 1Z"/><path d="m18 3 1-2 2 21h-2"/>',
+    stack:'<path d="M5 3h16v5H5M2 11h16v5H2M5 19h16"/>',
+    previous:'<path d="m11 4-7 8 7 8M4 12h17"/>',
+    next:'<path d="m13 4 7 8-7 8M3 12h17"/>',
+    exit:'<path d="M13 3h8v18h-8M2 12h14m-6-6 6 6-6 6"/>',
+    navigator:'<circle cx="12" cy="12" r="10"/><path fill="currentColor" stroke="none" d="m12 2 3 4-3 3-3-3ZM21 7l-1 5-4 1-1-5ZM20 19l-5 1-2-4 4-2ZM7 21l-3-4 3-4 4 2ZM2 9l4-4 3 4-2 4Z"/>'
+  };
+  return '<svg class="pv-icon pv-icon-'+name+'" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round">'+(paths[name]||'')+'</svg>';
+}
+function renderExamChrome(){
+  $('topbar').querySelector('.title').firstChild.textContent=active?.esat?'Engineering and Science Admissions Test':'Test of Mathematics for University Admission';
+  $('topQCount').innerHTML=examIcon('stack')+'<span'+(examQuestionCountVisible?'':' class="hidden"')+'>'+(idx+1)+' of '+QUESTIONS.length+'</span>';
+  $('topQCount').classList.toggle('count-hidden',!examQuestionCountVisible);
+  $('topQCount').setAttribute('aria-pressed',String(examQuestionCountVisible));
+  $('topQCount').setAttribute('aria-label',(examQuestionCountVisible?'Hide':'Show')+' question count');
+  $('topQCount').title=(examQuestionCountVisible?'Hide':'Show')+' question count';
+  $('flagWrap').classList.toggle('hidden',reviewMode);
+  $('flagWrap').classList.toggle('on',!!flags[idx]);
+  $('flagChk').checked=!!flags[idx];
+  $('flagIcon').innerHTML=examIcon('flag');
+  $('prevBtn').disabled=(idx===0);
+  $('prevBtn').innerHTML=examIcon('previous')+'<span><u>P</u>revious</span>';
+  $('reviewBtn').innerHTML=examIcon('navigator')+'<span>Na<u>v</u>igator</span>';
+  $('nextBtn').innerHTML=(reviewMode&&idx===QUESTIONS.length-1)?'Finish Review':'<span><u>N</u>ext</span>'+examIcon('next');
+  $('exitBtn').classList.remove('hidden');
+  $('exitBtn').innerHTML=examIcon('exit')+'<span><u>E</u>'+(reviewMode?'xit Review':'nd Exam')+'</span>';
+  // Pearson's Explain Answer is a review feature; never reveal a live answer key.
+  $('explainAnswerBtn').classList.toggle('hidden',!reviewMode);
+  $('explainAnswerBtn').innerHTML=examIcon('navigator')+'<span>Explain Answer</span>';
+  $('explainAnswerBtn').setAttribute('aria-expanded','true');
+}
 function render(){
   if(!reviewMode && !submitted) startQuestionTiming(idx);
   if(!reviewMode && seen.length===QUESTIONS.length) seen[idx]=true;
   const q=QUESTIONS[idx];
   $('progNow').textContent=idx+1;
-  $('topQCount').textContent=(idx+1)+' of '+QUESTIONS.length;
-  $('stem').innerHTML='<b>Q'+(idx+1)+'.</b> '+richMathHtml(q.stem);
-  if(reviewMode){
-    $('questionTopic').textContent='Topic: '+questionTopic(q);
-    $('questionTopic').classList.remove('hidden');
-  } else {
-    $('questionTopic').textContent='';
-    $('questionTopic').classList.add('hidden');
-  }
-
-  const wrap=$('options'); wrap.innerHTML='';
-  const flawedNoAns = (q.correct===99);
-  if(q.companion){
-    wrap.className='options companion';
-    q.opts.forEach((o,i)=>{
-      const b=document.createElement('button'); b.setAttribute('type','button');
-      let cls='';
-      if(reviewMode){
-        if(!flawedNoAns && isCorrectOpt(q,i)) cls=' correct';
-        else if(answers[idx]===i) cls=' wrong';
-      } else if(answers[idx]===i){ cls=' sel'; }
-      b.className='copt'+cls;
-      b.textContent=LETTERS[i];
-      if(!reviewMode) b.addEventListener('click',()=>choose(i));
-      wrap.appendChild(b);
-    });
-    const sol=$('solution');
-    if(reviewMode){ sol.classList.remove('hidden'); sol.innerHTML='<h4>Review</h4>'+richMathHtml(q.sol); }
-    else { sol.classList.add('hidden'); sol.innerHTML=''; }
-    $('flagWrap').classList.toggle('hidden', reviewMode);
-    $('flagWrap').classList.toggle('on', flags[idx]);
-    $('flagChk').checked = !!flags[idx];
-    if($('flagIcon')) $('flagIcon').textContent=flags[idx]?'⚑':'⚐';
-    $('prevBtn').disabled=(idx===0);
-    const last=(idx===QUESTIONS.length-1);
-    $('nextBtn').textContent = last ? (reviewMode ? 'Finish Review' : 'Next →') : 'Next →';
-    $('exitBtn').classList.remove('hidden');
-    $('exitBtn').innerHTML = reviewMode ? '&#10005; Exit Review' : '&#10534; End Exam';
-    typeset($('testMain')); window.scrollTo(0,0);
-    snapshotProgress();
-    return;
-  }
-  wrap.className='options';
+  $('stem').innerHTML=richMathHtml(q.stem);
+  $('questionTopic').textContent=reviewMode?'Topic: '+questionTopic(q):'';
+  $('questionTopic').classList.toggle('hidden',!reviewMode);
+  const wrap=$('options');wrap.innerHTML='';
+  wrap.className='options'+(q.companion?' companion':'');
   q.opts.forEach((o,i)=>{
-    const b=document.createElement('button'); b.setAttribute('type','button');
-    let cls='';
-    if(reviewMode){
-      if(!flawedNoAns && isCorrectOpt(q,i)) cls=' correct';
-      else if(answers[idx]===i) cls=' wrong';
-    }
-    else if(answers[idx]===i){ cls=' sel'; }
-    b.className='opt'+cls;
-    let mark='';
-    if(reviewMode){
-      if(!flawedNoAns && isCorrectOpt(q,i)) mark='<span class="mark">Correct</span>';
-      else if(answers[idx]===i) mark='<span class="mark">Your answer</span>';
-    }
-    b.innerHTML='<span class="radio"></span><span class="letter">'+LETTERS[i]+'</span><span class="body">'+richMathHtml(o)+'</span>'+mark;
-    if(!reviewMode) b.addEventListener('click',()=>choose(i));
-    wrap.appendChild(b);
+    const label=document.createElement('label');
+    const correct=reviewMode&&q.correct!==99&&isCorrectOpt(q,i);
+    const wrong=reviewMode&&!correct&&answers[idx]===i;
+    label.className='opt'+(correct?' correct':wrong?' wrong':answers[idx]===i?' sel':'');
+    const radio=document.createElement('input');
+    radio.type='radio';radio.name='exam-answer';radio.id='examAnswer'+i;
+    radio.value=String(i);radio.className='exam-radio';
+    radio.checked=answers[idx]===i;radio.disabled=reviewMode;
+    radio.setAttribute('aria-label','Answer '+LETTERS[i]);
+    radio.setAttribute('aria-describedby','examAnswerText'+i);
+    radio.tabIndex=answers[idx]===i||(answers[idx]===null&&i===0)?0:-1;
+    radio.addEventListener('change',()=>choose(i,true));
+    label.appendChild(radio);
+    const body=document.createElement('span');body.className='body';body.id='examAnswerText'+i;
+    body.innerHTML=q.companion?LETTERS[i]:richMathHtml(o);label.appendChild(body);
+    if(correct||wrong){const mark=document.createElement('span');mark.className='mark';mark.textContent=correct?'Correct':'Your answer';label.appendChild(mark);}
+    wrap.appendChild(label);
   });
-
-  const sol=$('solution');
-  if(reviewMode){ sol.classList.remove('hidden'); sol.innerHTML='<h4>'+(q.unscored?'Review note':'Answer review')+'</h4>'+richMathHtml(q.sol); }
-  else { sol.classList.add('hidden'); sol.innerHTML=''; }
-
-  $('flagWrap').classList.toggle('hidden', reviewMode);
-  $('flagWrap').classList.toggle('on', flags[idx]);
-  $('flagChk').checked = !!flags[idx];
-  if($('flagIcon')) $('flagIcon').textContent=flags[idx]?'⚑':'⚐';
-
-  $('prevBtn').disabled=(idx===0);
-  const last=(idx===QUESTIONS.length-1);
-  $('nextBtn').textContent = last ? (reviewMode ? 'Finish Review' : 'Next →') : 'Next →';
-  $('exitBtn').classList.remove('hidden');
-    $('exitBtn').innerHTML = reviewMode ? '&#10005; Exit Review' : '&#10534; End Exam';
-
-  typeset($('testMain')); window.scrollTo(0,0);
+  const sol=$('solution');sol.classList.toggle('hidden',!reviewMode);
+  sol.innerHTML=reviewMode?'<h4>'+(q.unscored?'Review note':'Answer review')+'</h4>'+richMathHtml(q.sol):'';
+  renderExamChrome();
+  typeset($('testMain'));$('testMain').scrollTop=0;
   snapshotProgress();
 }
-
-function choose(i){ if(reviewMode) return; answers[idx]=(answers[idx]===i)?null:i; render(); }
-
-$('prevBtn').addEventListener('click', ()=>{ if(idx>0){ idx--; render(); } });
-$('nextBtn').addEventListener('click', ()=>{ if(idx<QUESTIONS.length-1){ idx++; render(); } else if(reviewMode){ backToResults(); } });
-$('flagChk').addEventListener('change', ()=>{ if(!reviewMode){ flags[idx]=$('flagChk').checked; render(); } });
+function choose(i,focusAnswer=false){
+  if(reviewMode||submitted||!Number.isInteger(i)||i<0||i>=QUESTIONS[idx].opts.length)return;
+  // Native radio behaviour: clicking the selected answer does not clear it.
+  answers[idx]=i;render();
+  if(focusAnswer)$('examAnswer'+i)?.focus();
+}
+$('prevBtn').addEventListener('click',()=>{if(idx>0){idx--;render();}});
+$('nextBtn').addEventListener('click',()=>{if(idx<QUESTIONS.length-1){idx++;render();}else if(reviewMode){backToResults();}else{openNav();}});
+$('flagChk').addEventListener('change',()=>{if(!reviewMode){flags[idx]=$('flagChk').checked;renderExamChrome();snapshotProgress();}});
+$('explainAnswerBtn').addEventListener('click',()=>{
+  if(!reviewMode)return;
+  const showing=$('solution').classList.contains('hidden');
+  $('solution').classList.toggle('hidden',!showing);$('explainAnswerBtn').setAttribute('aria-expanded',String(showing));
+  if(showing)$('solution').scrollIntoView({block:'nearest'});
+});
 
 /* ---------------- floating navigator ---------------- */
-$('reviewBtn').addEventListener('click', openNav);
-$('navClose').addEventListener('click', ()=>$('navOver').classList.add('hidden'));
-
-function openNav(){
-  $('endConfirm').classList.add('hidden');
-  const tb=$('navTable'); tb.innerHTML='';
-  QUESTIONS.forEach((q,i)=>{
-    const tr=document.createElement('tr');
-    tr.className='row'+(i===idx?' current':'');
-    const answered=answers[i]!==null;
-    const visited=!!seen[i];
-    const status=answered?'Complete':(visited?'Incomplete':'Unseen');
-    const statusClass=answered?'status-complete':(visited?'status-incomplete':'status-unseen');
-    tr.innerHTML='<td>Question '+(i+1)+'</td>'
-      +'<td class="'+statusClass+'">'+status+'</td>'
-      +'<td class="'+(flags[i]?'flagged':'')+'">'+(flags[i]?'Flagged':'')+'</td>';
-    tr.addEventListener('click',()=>{ idx=i; $('navOver').classList.add('hidden'); render(); });
+let navSort={key:'question',ascending:true},navReturnFocus=null;
+$('reviewBtn').addEventListener('click',openNav);
+$('topQCount').addEventListener('click',()=>{examQuestionCountVisible=!examQuestionCountVisible;renderExamChrome();});
+$('navClose').addEventListener('click',closeNav);
+function closeNav(){
+  $('navOver').classList.add('hidden');
+  (navReturnFocus&&navReturnFocus.isConnected?navReturnFocus:$('reviewBtn')).focus();
+}
+function navStatus(i){return answers[i]!==null?'Complete':seen[i]?'Incomplete':'Unseen';}
+function renderNavigator(){
+  const tb=$('navTable');tb.innerHTML='';
+  const order=QUESTIONS.map((_,i)=>i);
+  order.sort((a,b)=>{
+    const value=i=>navSort.key==='status'?navStatus(i):navSort.key==='flag'?Number(!!flags[i]):i;
+    const x=value(a),y=value(b);return (x<y?-1:x>y?1:a-b)*(navSort.ascending?1:-1);
+  });
+  order.forEach(i=>{
+    const tr=document.createElement('tr');tr.className='row'+(i===idx?' current':'');
+    const status=navStatus(i);
+    tr.innerHTML='<td><button type="button" class="nav-question" data-question="'+i+'"'+(i===idx?' aria-current="step"':'')+'>Question '+(i+1)+'</button></td>'
+      +'<td class="status-'+status.toLowerCase()+'">'+status+'</td>'
+      +'<td class="'+(flags[i]?'flagged':'')+'">'+(flags[i]?examIcon('flag')+'<span class="pv-sr-only">Flagged for Review</span>':'')+'</td>';
+    tr.addEventListener('click',()=>{idx=i;$('navOver').classList.add('hidden');render();$('examAnswer'+(answers[idx]??0))?.focus();});
     tb.appendChild(tr);
   });
-  const pending=QUESTIONS.reduce((n,q,i)=>n+(answers[i]===null?1:0),0);
-  $('navPendingCount').textContent=pending;
+  document.querySelectorAll('[data-nav-sort]').forEach(button=>{
+    const selected=button.dataset.navSort===navSort.key;
+    button.closest('th').setAttribute('aria-sort',selected?(navSort.ascending?'ascending':'descending'):'none');
+    const labels={question:'Question #',status:'Status',flag:'Flagged for Review'};
+    button.innerHTML=labels[button.dataset.navSort]+(selected?' <span class="sortarrow">'+(navSort.ascending?'▲':'▼')+'</span>':'');
+  });
+  $('navPendingCount').textContent=QUESTIONS.reduce((n,_,i)=>n+(answers[i]===null?1:0),0);
+}
+function openNav(){
+  if($('testMain').classList.contains('hidden'))return;
+  if($('navOver').classList.contains('hidden'))navReturnFocus=document.activeElement;
+  $('endConfirm').classList.add('hidden');renderNavigator();
+  $('navDragHandle').innerHTML=examIcon('navigator')+'<span>Navigator - <small>select a question to go to it</small></span>';
   $('navOver').classList.remove('hidden');
+  $('navTable').querySelector('tr.current .nav-question')?.focus();
+}
+document.querySelectorAll('[data-nav-sort]').forEach(button=>button.addEventListener('click',()=>{
+  navSort={key:button.dataset.navSort,ascending:navSort.key===button.dataset.navSort?!navSort.ascending:true};renderNavigator();button.focus();
+}));
+function trapExamFocus(event,container){
+  if(event.key!=='Tab')return;
+  const nodes=[...container.querySelectorAll('button,input,select,[tabindex="0"]')].filter(el=>!el.disabled&&!el.closest('.hidden'));
+  const first=nodes[0],last=nodes[nodes.length-1];
+  if(!first)return;
+  if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}
+  else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
 }
 
 function showEndConfirm(){
@@ -5290,8 +5313,9 @@ function showEndConfirm(){
     $('endConfirmQuestion').textContent='Are you sure you want to end this exam?';
   }
   $('endConfirm').classList.remove('hidden');
+  $('endNo').focus();
 }
-$('endNo').addEventListener('click', ()=>$('endConfirm').classList.add('hidden'));
+$('endNo').addEventListener('click', ()=>{$('endConfirm').classList.add('hidden');$('exitBtn').focus();});
 $('endYes').addEventListener('click', ()=>{ $('endConfirm').classList.add('hidden'); submit(); });
 
 // Drag the Navigator by its blue title bar. The bottom-right corner remains native-resizable.
@@ -5307,9 +5331,9 @@ $('endYes').addEventListener('click', ()=>{ $('endConfirm').classList.add('hidde
   });
   handle.addEventListener('pointermove',e=>{
     if(!dragging) return;
-    const maxL=Math.max(0,window.innerWidth-win.offsetWidth), maxT=Math.max(64,window.innerHeight-38-win.offsetHeight);
+    const maxL=Math.max(0,window.innerWidth-win.offsetWidth), maxT=Math.max(0,window.innerHeight-win.offsetHeight);
     win.style.left=Math.min(Math.max(0,e.clientX-dx),maxL)+'px';
-    win.style.top=Math.min(Math.max(64,e.clientY-dy),maxT)+'px';
+    win.style.top=Math.min(Math.max(0,e.clientY-dy),maxT)+'px';
   });
   const stop=e=>{ if(dragging){dragging=false; try{handle.releasePointerCapture(e.pointerId)}catch(_){}} };
   handle.addEventListener('pointerup',stop); handle.addEventListener('pointercancel',stop);
@@ -5681,21 +5705,34 @@ window.addEventListener('beforeunload', unloadSave);
 document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='hidden') unloadSave(); });
 
 /* ---------------- keyboard ---------------- */
-document.addEventListener('keydown', (e)=>{
-  if(!$('loginScreen').classList.contains('hidden')) return;
-  if(!$('libraryScreen').classList.contains('hidden')) return;
-  if(!$('startScreen').classList.contains('hidden')) return;
-  if(!$('resultScreen').classList.contains('hidden')) return;
-  if(!$('navOver').classList.contains('hidden')){ if(e.key==='Escape') $('navOver').classList.add('hidden'); return; }
-  if($('testMain').classList.contains('hidden')) return;
+document.addEventListener('keydown',e=>{
+  if($('testMain').classList.contains('hidden'))return;
+  if(!$('endConfirm').classList.contains('hidden')){
+    if(e.key==='Escape'){e.preventDefault();$('endNo').click();}else trapExamFocus(e,$('endConfirm'));return;
+  }
+  if(!$('navOver').classList.contains('hidden')){
+    if(e.key==='Escape'){e.preventDefault();closeNav();}else trapExamFocus(e,$('navWindow'));return;
+  }
   const k=e.key.toLowerCase();
-  if(['a','b','c','d','e','f','g','h','i','j'].includes(k)){ const i=LETTERS.indexOf(k.toUpperCase()); if(i<QUESTIONS[idx].opts.length && !reviewMode) choose(i); }
-  else if(k>='1'&&k<='9'){ const i=parseInt(k,10)-1; if(i<QUESTIONS[idx].opts.length && !reviewMode) choose(i); }
-  else if(k==='0'){ const i=9; if(i<QUESTIONS[idx].opts.length && !reviewMode) choose(i); }
-  else if(e.key==='ArrowRight'){ if(idx<QUESTIONS.length-1){ idx++; render(); } }
-  else if(e.key==='ArrowLeft'){ if(idx>0){ idx--; render(); } }
-  else if(k==='f'){ if(!reviewMode){ flags[idx]=!flags[idx]; render(); } }
-  else if(k==='r'){ openNav(); }
+  if(e.altKey&&!e.ctrlKey&&!e.metaKey){
+    const actions={f:()=>{if(!reviewMode){flags[idx]=!flags[idx];renderExamChrome();snapshotProgress();}},n:()=>$('nextBtn').click(),p:()=>$('prevBtn').click(),v:openNav,e:()=>$('exitBtn').click()};
+    if(actions[k]){e.preventDefault();actions[k]();}return;
+  }
+  if(e.ctrlKey||e.metaKey)return;
+  const target=e.target;
+  if(target?.matches('input,select,textarea,[contenteditable="true"]')){
+    if(target.classList.contains('exam-radio')&&['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)){
+      e.preventDefault();const d=['ArrowUp','ArrowLeft'].includes(e.key)?-1:1;
+      choose((Number(target.value)+d+QUESTIONS[idx].opts.length)%QUESTIONS[idx].opts.length,true);
+      return;
+    }
+    if(!target.classList.contains('exam-radio'))return;
+  }
+  if(k.length===1&&LETTERS.includes(k.toUpperCase())){const i=LETTERS.indexOf(k.toUpperCase());if(i<QUESTIONS[idx].opts.length&&!reviewMode){e.preventDefault();choose(i);}}
+  else if(/^[0-9]$/.test(k)){const i=k==='0'?9:Number(k)-1;if(i<QUESTIONS[idx].opts.length&&!reviewMode){e.preventDefault();choose(i);}}
+  else if(e.key==='ArrowRight'){e.preventDefault();$('nextBtn').click();}
+  else if(e.key==='ArrowLeft'){e.preventDefault();$('prevBtn').click();}
+  else if(k==='r'){e.preventDefault();openNav();}
 });
 
 /* Additional practice tools. Existing exam delivery and scoring stay separate. */
@@ -6480,9 +6517,10 @@ refreshAccountCircles();
 
 </script>
 <script src="duck-redesign.js?v=20260913-2"></script>
-<script src="esat.js?v=20260918-1"></script>
+<script src="esat.js?v=20260920-2"></script>
 <link rel="stylesheet" href="duck-airy.css?v=20260920-1">
 <script src="duck-airy.js?v=20260920-1"></script>
+<link rel="stylesheet" href="pearson-exam.css?v=20260920-1">
 <script>cloudBoot();</script>
 </body>
 </html>
