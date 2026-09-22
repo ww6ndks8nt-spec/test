@@ -6,8 +6,10 @@
  const make=(tag,cls,text)=>{const el=document.createElement(tag);if(cls)el.className=cls;if(text!==undefined)el.textContent=text;return el;};
  const paths={home:'<path d="m3 10 9-7 9 7M5 9v12h5v-7h4v7h5V9"/>',paper:'<path d="M6 3h9l4 4v14H6zM14 3v5h5M9 12h7M9 16h7"/>',bank:'<rect x="3" y="3" width="6" height="6" rx="1"/><rect x="15" y="3" width="6" height="6" rx="1"/><rect x="3" y="15" width="6" height="6" rx="1"/><rect x="15" y="15" width="6" height="6" rx="1"/>',chart:'<path d="M4 20V11M12 20V4M20 20V8"/>',journal:'<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 3h6v4H9zM9 11h6M9 15h6"/>',calendar:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M7 3v4M17 3v4M7 14h3M14 14h3"/>',check:'<path d="m5 12 4 4L19 6"/>',clock:'<circle cx="12" cy="12" r="9"/><path d="M12 6v6l4 3"/>',arrow:'<path d="M4 12h16m-6-6 6 6-6 6"/>',more:'<path d="m6 9 6 6 6-6"/>',bookmark:'<path d="M6 3h12v18l-6-4-6 4z"/>',retry:'<path d="M4 10a8 8 0 1 1 1 8M4 4v6h6"/>'};
  const icon=name=>'<svg class="airy-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'+paths[name]+'</svg>';
- const duck=()=>'<img src="duck-mascot-airy.png?v=20260922-1" alt="" width="240" height="240" draggable="false">';
+ const duck=()=>'<img src="duck-mascot-airy.png?v=20260922-3" alt="" width="240" height="240" draggable="false">';
  const mascot=dash.querySelector('.duck-mascot');
+ const egg=mascot?.querySelector('.duck-egg');
+ if(egg)egg.innerHTML='<svg viewBox="0 0 32 44" aria-hidden="true" focusable="false"><defs><radialGradient id="airyEggShell" cx="32%" cy="28%" r="76%"><stop stop-color="#ffffff"/><stop offset=".48" stop-color="#fffdf5"/><stop offset=".86" stop-color="#e9e2d1"/><stop offset="1" stop-color="#cfc5af"/></radialGradient></defs><path d="M16 1.5C9 1.5 2 19 2 28C2 37 7.5 42 16 42S30 37 30 28C30 19 23 1.5 16 1.5Z" fill="url(#airyEggShell)" stroke="#c9c0ac" stroke-width=".7"/></svg>';
  if(mascot){const art=mascot.querySelector('.duck-logo');art.classList.add('airy-duck-art');art.innerHTML=duck();dash.querySelector('.studio-heading').appendChild(mascot);}
  const brandDuck=nav.querySelector('.duck-logo');brandDuck.classList.add('airy-duck-art');brandDuck.innerHTML=duck();
  document.querySelectorAll('.modern-ui .duck-logo:not(.airy-duck-art)').forEach(el=>{el.classList.add('airy-duck-art');el.innerHTML=duck();});
@@ -18,7 +20,7 @@
  nav.classList.add('duck-topbar');
  document.querySelectorAll('.screen.modern-ui.nav-aware').forEach(screen=>{
   const garden=make('div','duck-garden');garden.setAttribute('aria-hidden','true');garden.setAttribute('inert','');
-  garden.innerHTML='<img class="duck-garden-left" src="duck-pond-garden.png?v=20260922-1" alt="" width="1024" height="1536" decoding="async" draggable="false"><img class="duck-garden-right" src="duck-pond-garden.png?v=20260922-1" alt="" width="1024" height="1536" decoding="async" draggable="false">';
+  garden.innerHTML='<img class="duck-garden-left" src="duck-pond-garden.png?v=20260922-3" alt="" width="1024" height="1536" decoding="async" draggable="false"><img class="duck-garden-right" src="duck-pond-garden.png?v=20260922-3" alt="" width="1024" height="1536" decoding="async" draggable="false">';
   screen.prepend(garden);
  });
  const items=nav.querySelector('.side-nav-items');
@@ -77,6 +79,26 @@
  const focus=make('section','airy-focus');analysis.after(focus);
  const topics=$('dashTopics').closest('.studio-analysis');topics.classList.add('airy-topics');topics.querySelector('h2').textContent='Topics';
  function wireCard(card,button){card.tabIndex=0;card.setAttribute('role','link');card.setAttribute('aria-label',card.querySelector('b')?.textContent||button.textContent);card.addEventListener('click',e=>{if(!e.target.closest('button,a,input,select,textarea'))button.click();});card.addEventListener('keydown',e=>{if(e.target===card&&(e.key==='Enter'||e.key===' ')){e.preventDefault();button.click();}});}
+ function paperRating(mean){return '<span class="airy-paper-rating" aria-label="Estimated difficulty '+mean.toFixed(1)+'"><span class="airy-dots" aria-hidden="true">'+Array.from({length:5},(_,i)=>'<i'+(i<Math.ceil(mean/2)?' class="filled"':'')+'></i>').join('')+'</span><span>'+mean.toFixed(1)+'</span></span>';}
+ function refreshPaperRows(){
+  $('libraryScreen').querySelectorAll('.paper[data-paper-id]').forEach(button=>{
+   const paper=paperById(button.dataset.paperId);if(!paper)return;
+   const records=STATE.results[paper.id]||[],best=records.filter(r=>r.s>0).slice().sort((a,b)=>b.c/b.s-a.c/a.s)[0];
+   const mean=(paper.esat||paper.mat)?null:difficultyStats(paper).mean,minutes=selectedTimeMinutesForPaper(paper);
+   const timing=minutes>0?formatDurationCompact(Math.round(minutes*60)):'Untimed';
+   button.classList.add('airy-library-row');
+   button.innerHTML='<span class="airy-paper-icon" aria-hidden="true">'+icon('paper')+'</span>'
+    +'<span class="airy-library-copy"><span class="pn">'+escapeHtml(paper.title)+'</span><span class="airy-paper-detail">'+paper.questions.length+' questions · '+escapeHtml(timing)+'</span></span>'
+    +(mean===null?'<span class="airy-paper-rating airy-rating-empty" aria-hidden="true"></span>':paperRating(mean))
+    +'<span class="airy-recent-score"><small>Best</small><span>'+(best?'<b>'+best.c+'</b> / '+best.s:'—')+'</span></span>'
+    +'<span class="airy-recent-attempts"><small>Attempts</small><b>'+records.length+'</b></span>'
+    +'<span class="airy-paper-open">'+(button.disabled?'Unavailable':'Open paper →')+'</span>';
+  });
+ }
+ // Keep the original buttons, disabled state, filters and opening handlers.
+ const originalLibrary=buildLibrary;buildLibrary=function(...args){const result=originalLibrary.apply(this,args);refreshPaperRows();return result;};
+ $('timeSelect').addEventListener('change',refreshPaperRows);
+ if(!$('libraryScreen').classList.contains('hidden'))refreshPaperRows();
  function renderRecent(){
   const all=dashboardAllAttemptRows().filter(x=>!!x.p.esat===ESAT_MODE),seenPapers=new Set(),rows=all.filter(x=>{if(seenPapers.has(x.p.id))return false;seenPapers.add(x.p.id);return true;}).slice(0,2),host=$('dashRecent');host.replaceChildren();
   if(!rows.length){const blank=make('div','airy-recent-empty');blank.innerHTML=icon('paper')+'<p>No completed papers yet.</p>';const b=make('button','bigbtn','Browse papers →');b.type='button';b.addEventListener('click',showLibraryHub);blank.appendChild(b);host.appendChild(blank);return;}
@@ -84,7 +106,7 @@
    const records=all.filter(x=>x.p.id===row.p.id),best=records.filter(x=>x.s>0).sort((a,b)=>b.c/b.s-a.c/a.s)[0],mean=difficultyStats(row.p).mean;
    const el=make('article','airy-recent-row'),doc=make('span','airy-paper-icon');doc.innerHTML=icon('paper');el.appendChild(doc);
    const title=make('b','airy-recent-title',row.p.title);el.appendChild(title);
-   if(mean!==null&&!ESAT_MODE){const rating=make('div','airy-paper-rating');rating.setAttribute('aria-label','Estimated difficulty '+mean.toFixed(1));rating.innerHTML='<span class="airy-dots" aria-hidden="true">'+Array.from({length:5},(_,i)=>'<i'+(i<Math.ceil(mean/2)?' class="filled"':'')+'></i>').join('')+'</span><span>'+mean.toFixed(1)+'</span>';el.appendChild(rating);}
+   if(mean!==null&&!ESAT_MODE)el.insertAdjacentHTML('beforeend',paperRating(mean));
    const score=make('div','airy-recent-score');score.innerHTML='<small>Best</small><span>'+(best?'<b>'+best.c+'</b> / '+best.s:'—')+'</span>';el.appendChild(score);
    const tries=make('div','airy-recent-attempts');tries.innerHTML='<small>Attempts</small><b>'+records.length+'</b>';el.appendChild(tries);
    const button=make('button','bigbtn','Open paper →');button.type='button';button.addEventListener('click',()=>openStart(row.p));el.appendChild(button);wireCard(el,button);host.appendChild(el);
